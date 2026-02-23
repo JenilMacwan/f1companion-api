@@ -305,8 +305,8 @@ def get_race_results(round: str, year: str):
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error fetching F1 races: {str(e)}")
 
-@app.get("/stats_team/{constructor_id}")
-def get_stats_team(constructor_id: str):
+@app.get("/constructor_stats/{constructor_id}")
+def get_constructor_stats(constructor_id: str):    
     career_wins = 0
     career_podiums = 0
     # career_wdc = 0
@@ -492,8 +492,8 @@ def get_stats_team(constructor_id: str):
         
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
-@app.get("/stats_driver/{driver_id}")
-def get_stats_driver(driver_id: str):
+@app.get("/driver_stats/{driver_id}")
+def get_driver_stats(driver_id: str):
     career_wins = 0
     career_podiums = 0
     total_points = 0.0
