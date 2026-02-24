@@ -1,11 +1,40 @@
+import uvicorn
+import flag
 import requests
-from datetime import datetime
+import feedparser
+import re
+from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allows all domains (perfect for testing)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app = app
+
 F1COMPNAION = "https://api.jolpi.ca/ergast/f1/2026.json"
 
+WMO_CODES = {
+    0: "Clear Sky",
+    1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+    45: "Fog", 48: "Depositing Rime Fog",
+    51: "Light Drizzle", 53: "Moderate Drizzle", 55: "Dense Drizzle",
+    61: "Slight Rain", 63: "Moderate Rain", 65: "Heavy Rain",
+    71: "Slight Snow", 73: "Moderate Snow", 75: "Heavy Snow",
+    80: "Slight Rain Showers", 81: "Moderate Rain Showers", 82: "Violent Rain Showers",
+    95: "Thunderstorm", 96: "Thunderstorm with Hail", 99: "Thunderstorm with Heavy Hail"
+}
+
+TRACK_LAYOUT = {
+    "Bahrain": "https://github.com/JenilMacwan/f1companion-api/blob/main/assets/track/sakhir-bahrain2026.webp?raw=true"
+}
 
 
 DRIVER_STANDINGS = "https://api.jolpi.ca/ergast/f1/2026/driverstandings.json"
@@ -16,7 +45,26 @@ CONSTRUCTORS = "https://api.jolpi.ca/ergast/f1/2026/constructors.json"
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the F1 Companion API"}
+    return {
+        "title": "F1 Companion API 🏎️",
+        "welcome_message": "Welcome to the F1 Companion API",
+        "description": "A high-performance middleware for Formula 1 data.",
+        "endpoints": [
+            {"path": "/", "description": "API Index"},
+            {"path": "/schedule", "description": "Current season calendar"},
+            {"path": "/next_race", "description": "Live countdown and track weather"},
+            {"path": "/drivers", "description": "Current driver lineup"},
+            {"path": "/constructors", "description": "Current team lineup"},
+            {"path": "/driver_standings", "description": "WDC Live Standings"},
+            {"path": "/constructor_standings", "description": "WCC Live Standings"},
+            {"path": "/circuits", "description": "Information of all 2026 circuits"},
+            {"path": "/race_results/{race_id}", "description": "Results of a specific race"},
+            {"path": "/driver_stats/{driver_id}", "description": "Deep career stats for drivers"},
+            {"path": "/constructor_stats/{constructor_id}", "description": "Team performance and history"},
+            {"path": "/news", "description": "Latest F1 news"}
+        ],
+        "status": "online"
+    }
 
 @app.get("/schedule")
 def get_schedule():
@@ -69,32 +117,103 @@ def get_schedule():
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error fetching F1 schedule: {str(e)}")
 
+import requests
+from datetime import datetime, timezone
+
 @app.get("/next_race")
 def get_next_race():
-    response = requests.get(F1COMPNAION)
-    response.raise_for_status()
-    data = response.json()
+    try:
+        # 1. Fetch Schedule
+        response = requests.get(F1COMPNAION)
+        response.raise_for_status()
+        data = response.json()
 
-    today = datetime.now().date()
-    current_time = datetime.now().time()
+        now = datetime.now(timezone.utc)
+        races = data["MRData"]["RaceTable"]["Races"]
+        
+        next_event = None
+        for race in races:
+            # Check race date/time
+            race_time_str = f"{race['date']}T{race.get('time', '00:00:00Z')}"
+            race_dt = datetime.fromisoformat(race_time_str.replace('Z', '+00:00'))
+            
+            if race_dt > now:
+                next_event = race
+                break
 
-    for race in data["MRData"]["RaceTable"]["Races"]:
-        race_date = datetime.strptime(race["date"], "%Y-%m-%d").date()
-        if race_date >= today:
-            return {
-                "status": "Live" if (race_date == today and race_time == current_time) 
-                else "Upcoming" if race_date > today 
-                else "Past",
-                "race_name": race["raceName"],
-                "circuit_name": race["Circuit"]["circuitName"],
-                "circuit_location": race["Circuit"]["Location"]["locality"],
-                "circuit_country": race["Circuit"]["Location"]["country"],
-                "race_date": race["date"],
-                "race_time": race["time"],
-                "days_until": (race_date - today).days
+        if not next_event:
+            return {"message": "Season concluded."}
+
+        # 2. Earliest Session for Countdown
+        # F1 weekends start with FP1. We find the earliest session provided by Jolpica.
+        session_keys = ["FirstPractice", "SecondPractice", "ThirdPractice", "Qualifying", "Sprint", "SprintQualifying"]
+        earliest_session_dt = race_dt # Default to race time if no sessions found
+        
+        for key in session_keys:
+            session = next_event.get(key)
+            if session:
+                s_str = f"{session['date']}T{session['time']}"
+                s_dt = datetime.fromisoformat(s_str.replace('Z', '+00:00'))
+                if s_dt < earliest_session_dt:
+                    earliest_session_dt = s_dt
+
+        # 3. Open-Meteo Weather Integration
+        lat = next_event["Circuit"]["Location"]["lat"]
+        lon = next_event["Circuit"]["Location"]["long"]
+        
+        # We request current temperature and weather codes
+        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code&timezone=auto"
+        weather_info = {"temp": "N/A", "condition": "Unknown"}
+        
+        try:
+            w_res = requests.get(weather_url).json()
+            weather_info = {
+                "temp": f"{int(w_res['current']['temperature_2m'])}°C",
+                # "weather_code": w_res['current']['weather_code'], 
+                "condition": WMO_CODES.get(w_res['current']['weather_code'], "Unknown")# Use this to map icons in Flutter
             }
+        except:
+            pass
 
-    return {"message": "No upcoming races found"}
+        # 4. Countdown Calculation
+        delta = earliest_session_dt - now
+        countdown = {
+            "days": delta.days,
+            "hours": delta.seconds // 3600,
+            "minutes": (delta.seconds // 60) % 60
+        }
+
+        # 5. Country Flag Helper
+        # We provide the ISO country code so Flutter can easily fetch a flag image
+        country = next_event["Circuit"]["Location"]["country"]
+
+        return {
+            "race_name": next_event["raceName"],
+            "circuit": next_event["Circuit"]["circuitName"],
+            "flag_emoji": get_clean_flag(country),
+            "weather": weather_info,
+            "countdown": countdown,
+            "next_session": earliest_session_dt.strftime("%Y-%m-%d %H:%M UTC"),
+            "is_sprint_weekend": "Sprint" in next_event or "SprintQualifying" in next_event
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Helper: Convert Country Name to ISO (Manual map for F1 specific names)
+def get_clean_flag(country_name):
+    # F1 countries often use shorthand, so we map them to ISO-2 codes first
+    mapping = {
+        "UK": "GB", "USA": "US", "UAE": "AE", "Netherlands": "NL", 
+        "Saudi Arabia": "SA", "Italy": "IT", "Japan": "JP"
+    }
+    iso_code = mapping.get(country_name, country_name[:2].upper())
+    
+    try:
+        # This library ensures the characters are paired correctly for modern UIs
+        return flag.flag(iso_code) 
+    except:
+        return "🏁" # Fallback if code is invalid
 
 @app.get("/drivers")
 def get_drivers():
@@ -153,7 +272,7 @@ def get_constructors():
         }
         clean_constructors.append(constructor_entry)
 
-    return {"season": data["MRData"]["ConstructorTable"]["season"],"constructors": len(clean_constructors), "constructors": clean_constructors}
+    return {"season": data["MRData"]["ConstructorTable"]["season"],"total_constructors": len(clean_constructors), "constructors": clean_constructors}
 
 @app.get("/constructorstandings")
 def get_constructorstandings():
@@ -246,11 +365,14 @@ def get_circuits():
 
         clean_circuits = []
         for race in circuits_raw:
+            country_name = race["Circuit"]["Location"]["country"]
+            layout_url = TRACK_LAYOUT.get(country_name, "N/A")   
             circuit_entry = {
                 "circuitid": race["Circuit"]["circuitId"],
                 "circuitname": race["Circuit"]["circuitName"],
                 "circuitlocation": race["Circuit"]["Location"]["locality"],
-                "circuitcountry": race["Circuit"]["Location"]["country"],
+                "circuitcountry": country_name,
+                "circuitlayout": layout_url
             }
             clean_circuits.append(circuit_entry)
 
@@ -306,192 +428,65 @@ def get_race_results(round: str, year: str):
         raise HTTPException(status_code=500, detail=f"Error fetching F1 races: {str(e)}")
 
 @app.get("/constructor_stats/{constructor_id}")
-def get_constructor_stats(constructor_id: str):    
-    career_wins = 0
-    career_podiums = 0
-    # career_wdc = 0
-    # career_wcc = 0
-    active_seasons = set()
-    
-    # This list will hold EVERY race, bypassing the 100 limit
-    career_history = [] 
+def get_constructor_stats(constructor_id: str):
+    team_wins = 0
+    team_podiums = 0
+    total_gp_entries = 0 # Count of unique race weekends entered
     
     offset = 0
-    limit = 100 # We must play by Jolpica's 100-item rule
+    limit = 100 
     
     try:
+        # --- 1. FETCH ALL TEAM RACE RESULTS (Pagination) ---
         while True:
-            # The 'offset' moves forward by 100 every time the loop runs
+            # RESULTS_URL fetches every race the team has ever entered
             RESULTS_URL = f"https://api.jolpi.ca/ergast/f1/constructors/{constructor_id}/results.json?limit={limit}&offset={offset}"
-            
             response = requests.get(RESULTS_URL)
             response.raise_for_status()
             data = response.json()
             
             races = data["MRData"]["RaceTable"]["Races"]
-            
-            # If the list is empty, we have successfully downloaded the entire career!
             if not races:
                 break
                 
             for race in races:
-                active_seasons.add(race["season"])
-                result = race["Results"][0]
+                # Increment per unique Grand Prix (not per car)
+                total_gp_entries += 1 
                 
-                position = result.get("position")
-                if position == "1":
-                    career_wins += 1
-                if position in ["1", "2", "3"]:
-                    career_podiums += 1
-                
-                # Add the full race result to our history list
-                career_history.append({
-                    "season": race["season"],
-                    "round": race["round"],
-                    "raceName": race["raceName"],
-                    "position": position,
-                    "status": result["status"],
-                    "points": result["points"]
-                })
-            
-            # Move to the next page of results
-            offset += limit
-            
-        if not career_history:
-            return {"error": "No career data found for this driver."}    
-
-        # Calculate the first and last season
-        first_season = min(active_seasons)
-        last_season = max(active_seasons)
-        
-        # Calculate win percentage
-        total_races_entered = len(career_history)
-        win_percentage = (career_wins / total_races_entered * 100) if total_races_entered > 0 else 0.0
-        
-        # Calculate podium percentage
-        podium_percentage = (career_podiums / total_races_entered * 100) if total_races_entered > 0 else 0.0
-
-
-
-        return {
-            "constructorId": constructor_id,
-            "name": data["MRData"]["RaceTable"]["constructorId"],
-            "career_wins": career_wins,
-            "career_podiums": career_podiums,
-            "first_season": first_season,
-            "last_season": last_season,
-            "total_seasons": len(active_seasons),
-            "win_percentage": round(win_percentage, 2),
-            "career_history": career_history
-        }
-
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching F1 races: {str(e)}")
-
-# @app.get("/constructor_stats/{constructor_id}")
-# def get_constructor_stats(constructor_id: str):
-#     team_wins = 0
-#     team_podiums = 0
-#     total_points = 0.0
-#     active_seasons = set()
-    
-#     # NEW: We must track total unique races entered to calculate percentages
-#     team_races = 0 
-    
-#     offset = 0
-#     limit = 100 
-    
-#     try:
-#         # --- 1. FETCH ALL TEAM RACE RESULTS (Pagination) ---
-#         while True:
-#             RESULTS_URL = f"https://api.jolpi.ca/ergast/f1/constructors/{constructor_id}/results.json?limit={limit}&offset={offset}"
-            
-#             response = requests.get(RESULTS_URL)
-#             response.raise_for_status()
-#             data = response.json()
-            
-#             races = data["MRData"]["RaceTable"]["Races"]
-            
-#             if not races:
-#                 break
-                
-#             for race in races:
-#                 active_seasons.add(race["season"])
-#                 team_races += 1 # Count every unique race weekend the team entered
-                
-#                 for result in race["Results"]:
-#                     points_scored = float(result.get("points", 0.0))
-#                     total_points += points_scored
+                # Check results for both cars entered by the team
+                for result in race["Results"]:
+                    position = result.get("position")
                     
-#                     position = result.get("position")
-#                     if position == "1":
-#                         team_wins += 1
-#                     if position in ["1", "2", "3"]:
-#                         team_podiums += 1
+                    if position == "1":
+                        team_wins += 1
+                    if position in ["1", "2", "3"]:
+                        team_podiums += 1
                         
-#             offset += limit
+            offset += limit
 
-#         # --- 2. FETCH WCC and WDC (The Bulletproof "Global Check" Method) ---
-#         wcc_count = 0
-#         wdc_count = 0
+        # --- 2. CALCULATE PERCENTAGES ---
+        # Win % based on one trophy available per race
+        win_rate = round((team_wins / total_gp_entries * 100), 2) if total_gp_entries > 0 else 0
         
-#         for year in active_seasons:
-#             if year == "2026": # Skip the ongoing season!
-#                 continue
-                
-#             try:
-#                 # 2A. Global WCC Check (limit=1 only grabs the 1st place team)
-#                 WCC_URL = f"https://api.jolpi.ca/ergast/f1/{year}/constructorstandings.json?limit=1"
-#                 wcc_resp = requests.get(WCC_URL)
-                
-#                 if wcc_resp.status_code == 200:
-#                     c_data = wcc_resp.json()["MRData"]["StandingsTable"]["StandingsLists"]
-#                     # WCC didn't exist before 1958, so checking 'if c_data' safely skips earlier years
-#                     if c_data: 
-#                         champ_constructor = c_data[0]["ConstructorStandings"][0]["Constructor"]["constructorId"]
-#                         if champ_constructor == constructor_id:
-#                             wcc_count += 1
+        # Podium % based on two cars per team (two chances for a podium per race)
+        podium_rate = round((team_podiums / (total_gp_entries * 2) * 100), 2) if total_gp_entries > 0 else 0
 
-#                 # 2B. Global WDC Check (limit=1 only grabs the 1st place driver)
-#                 WDC_URL = f"https://api.jolpi.ca/ergast/f1/{year}/driverstandings.json?limit=1"
-#                 wdc_resp = requests.get(WDC_URL)
-                
-#                 if wdc_resp.status_code == 200:
-#                     d_data = wdc_resp.json()["MRData"]["StandingsTable"]["StandingsLists"]
-#                     if d_data:
-#                         # Drivers sometimes drove for multiple teams in a single historic year (e.g., Fangio). 
-#                         # We check the champion's entire constructor list.
-#                         champ_constructors = d_data[0]["DriverStandings"][0]["Constructors"]
-#                         for c in champ_constructors:
-#                             if c["constructorId"] == constructor_id:
-#                                 wdc_count += 1
-#                                 break
-                                
-#             except Exception as e:
-#                 print(f"Warning - Championship Fetch Error for {year}: {e}")
-
-#         # --- 3. CALCULATE PERCENTAGES ---
-#         win_percentage = round((team_wins / team_races) * 100, 2) if team_races > 0 else 0.0
-#         podium_percentage = round((team_podiums / team_races) * 100, 2) if team_races > 0 else 0.0
-
-#         # --- 4. RETURN THE FULL PACKAGE ---
-#         return {
-#             "constructor_id": constructor_id,
-#             "career_stats": {
-#                 "WCC": wcc_count,
-#                 "WDC": wdc_count,
-#                 "total_races": team_races,
-#                 "total_wins": team_wins,
-#                 "win_percentage": f"{win_percentage}%",
-#                 "total_podiums": team_podiums,
-#                 "podium_percentage": f"{podium_percentage}%",
-#                 "total_points": round(total_points, 1),
-#                 "total_seasons": len(active_seasons)
-#             }
-#         }
+        # --- 3. RETURN CLEANED DATA ---
+        return {
+            "constructor_id": constructor_id,
+            "stats": {
+                "total_races": total_gp_entries,
+                "wins": team_wins,
+                "win_percentage": f"{win_rate}%",
+                "podiums": team_podiums,
+                "podium_percentage": f"{podium_rate}%"
+            }
+        }
         
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
+    except Exception as e:
+        # Generic error handling to prevent API crashes
+        raise HTTPException(status_code=500, detail=f"Error processing stats: {str(e)}")
+
 @app.get("/driver_stats/{driver_id}")
 def get_driver_stats(driver_id: str):
     career_wins = 0
@@ -603,6 +598,50 @@ def get_driver_stats(driver_id: str):
         raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
 
 
+@app.get("/news")
+def get_f1_news():
+    
+    RSS_URL = "https://www.skysports.com/rss/12433"
+    feed = feedparser.parse(RSS_URL)
+    
+    news_list = []
+    try:
+        for entry in feed.entries[:10]:
+            image_url = ""
+            
+            # Check for standard RSS enclosures (common for images)
+            if 'enclosures' in entry and len(entry.enclosures) > 0:
+                image_url = entry.enclosures[0].get('url', '')
+            
+            # Fallback: Check for media:content tags (common in Sky/BBC feeds)
+            elif 'media_content' in entry:
+                image_url = entry.media_content[0].get('url', '')
+
+            # Second Fallback: Regex search in summary/description if image is embedded in HTML
+            elif not image_url and 'summary' in entry:
+                img_match = re.search(r'<img [^>]*src="([^"]+)"', entry.summary)
+                if img_match:
+                    image_url = img_match.group(1)
+
+            # --- CLEANING SUMMARY ---
+            # Remove HTML tags from the summary so it's clean for your Flutter Text widget
+            clean_summary = re.sub(r'<[^>]+>', '', entry.get('summary', ''))
+            news_list.append({
+                "title": entry.get('title', 'No Title'),
+                "description": clean_summary[:150] + "...", # Short snippet
+                "link": entry.get('link', ''),
+                "published": entry.get('published', ''),
+                "image": image_url if image_url else "https://raw.githubusercontent.com/JenilMacwan/f1companion-api/main/assets/track/f1_placeholder.webp"
+            })
+    
+        return {
+            "status": "ok",
+            "source": "Sky Sports F1",
+            "articles": news_list
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}    
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True)
