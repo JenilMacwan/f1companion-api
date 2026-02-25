@@ -33,7 +33,34 @@ WMO_CODES = {
 }
 
 TRACK_LAYOUT = {
-    "Bahrain": "https://github.com/JenilMacwan/f1companion-api/blob/997e3c439135be7d4fcf47fb050d66ce23e96921/assests/track/sakhir-bahrain2026.webp?raw=true"
+    "Bahrain": "https://github.com/JenilMacwan/f1companion-api/blob/997e3c439135be7d4fcf47fb050d66ce23e96921/assests/track/sakhir-bahrain2026.webp?raw=true",
+    "Australia":"",
+    "China":"",
+    "Japan":"",
+    "Canada":"",
+    "Spain":"",
+    "Austria":"",
+    "UK":"",
+    "Hungary":"",
+    "Belgium":"",
+    "Italy":"",
+    "Azerbaijan":"",
+    "USA":"",
+    "Mexico":"",
+    "Brazil":"",
+    "Las Vegas":"",
+    "Qatar":"",
+    "Saudi Arabia":"",
+    "Monaco":"",
+    "USA":"",
+    "Netherlands":"",
+    "Singapore":"",
+    "Qatar":"",
+    "Saudi Arabia":"",
+    "Monaco":"",
+    "USA":"",
+    "Netherlands":"",
+    "Singapore":"",
 }
 
 
