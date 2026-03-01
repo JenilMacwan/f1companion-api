@@ -5,6 +5,7 @@ import feedparser
 import re
 from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -40,6 +41,7 @@ TRACK_LAYOUT = {
     "Canada":"",
     "Spain":"",
     "Austria":"",
+    "Spain":"",
     "UK":"",
     "Hungary":"",
     "Belgium":"",
@@ -48,7 +50,7 @@ TRACK_LAYOUT = {
     "USA":"",
     "Mexico":"",
     "Brazil":"",
-    "Las Vegas":"",
+    "USA":"",
     "Qatar":"",
     "Saudi Arabia":"",
     "Monaco":"",
@@ -56,11 +58,6 @@ TRACK_LAYOUT = {
     "Netherlands":"",
     "Singapore":"",
     "Qatar":"",
-    "Saudi Arabia":"",
-    "Monaco":"",
-    "USA":"",
-    "Netherlands":"",
-    "Singapore":"",
 }
 
 
@@ -92,6 +89,10 @@ def read_root():
         ],
         "status": "online"
     }
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("assets/favicon/f1_companion_icon.png")
 
 @app.get("/schedule")
 def get_schedule():
