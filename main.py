@@ -40,6 +40,7 @@ TRACK_LAYOUT = {
     "Canada":"",
     "Spain":"",
     "Austria":"",
+    "Spain":"",
     "UK":"",
     "Hungary":"",
     "Belgium":"",
@@ -48,7 +49,7 @@ TRACK_LAYOUT = {
     "USA":"",
     "Mexico":"",
     "Brazil":"",
-    "Las Vegas":"",
+    "USA":"",
     "Qatar":"",
     "Saudi Arabia":"",
     "Monaco":"",
@@ -56,11 +57,6 @@ TRACK_LAYOUT = {
     "Netherlands":"",
     "Singapore":"",
     "Qatar":"",
-    "Saudi Arabia":"",
-    "Monaco":"",
-    "USA":"",
-    "Netherlands":"",
-    "Singapore":"",
 }
 
 
