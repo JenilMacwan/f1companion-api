@@ -34,30 +34,30 @@ WMO_CODES = {
 }
 
 TRACK_LAYOUT = {
-    "Bahrain": "https://github.com/JenilMacwan/f1companion-api/blob/997e3c439135be7d4fcf47fb050d66ce23e96921/assests/track/sakhir-bahrain2026.webp?raw=true",
-    "Australia":"",
-    "China":"",
-    "Japan":"",
-    "Canada":"",
-    "Spain":"",
-    "Austria":"",
-    "Spain":"",
-    "UK":"",
-    "Hungary":"",
-    "Belgium":"",
-    "Italy":"",
-    "Azerbaijan":"",
-    "USA":"",
-    "Mexico":"",
-    "Brazil":"",
-    "USA":"",
-    "Qatar":"",
-    "Saudi Arabia":"",
-    "Monaco":"",
-    "USA":"",
-    "Netherlands":"",
-    "Singapore":"",
-    "Qatar":"",
+    "Sakhir": "https://github.com/JenilMacwan/f1companion-api/blob/997e3c439135be7d4fcf47fb050d66ce23e96921/assests/track/sakhir-bahrain2026.webp?raw=true",
+    "Melbourne":"",
+    "Shanghai":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/shanghai-china.webp?raw=true",
+    "Suzuka":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/suzuka-japan.webp?raw=true",
+    "Montreal":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/monteeal%20-%20canada.webp?.raw=true",
+    "Barcelona":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/barcelona%20-%20spain.webp",
+    "Spielberg":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/speilberg%20-%20austri.webp",
+    "Madrid":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/madrid%20-%20spain.webp",
+    "Silverstone":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/silverstone%20-%20great%20britain.webp",
+    "Budapest":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/hungary.webp",
+    "Spa":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/spa%20-%20belgium.webp",
+    "Monza":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/monza%20-%20italy.webp",
+    "Baku":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/baku-azerbaijan.webp",
+    "Austin":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/austin-usa.webp",
+    "Mexico City":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/mexico.webp",
+    "São Paulo":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/sao%20paulo%20-%20brazil.webp",
+    "Las Vegas":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/lasvegas%20-%20usa.webp",
+    "Lusail":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/lusail-qatar.webp",
+    "Abu Dhabi":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/yasmarina%20-%20abudhabi.webp",
+    "Monte Carlo":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/monte%20carlo%20-%20monaco.webp",
+    "Miami":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/maimi-usa.webp",
+    "Zandvoort":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/zandvoort%20-%20netherlands.webp",
+    "Marina Bay":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/marinabay-singapore.webp",
+    "Jeddah":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/jeddah-saudi.webp"
 }
 
 
@@ -302,8 +302,8 @@ def get_constructors():
 
     return {"season": data["MRData"]["ConstructorTable"]["season"],"total_constructors": len(clean_constructors), "constructors": clean_constructors}
 
-@app.get("/constructorstandings")
-def get_constructorstandings():
+@app.get("/constructor_standings")
+def get_constructor_standings():
     try:
         response = requests.get(CONS_STANDINGS)
         response.raise_for_status()
@@ -340,8 +340,8 @@ def get_constructorstandings():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
 
-@app.get("/driverstandings")
-def get_driverstandings():
+@app.get("/driver_standings")
+def get_driver_standings():
     try:
         # Note: Ensure DRIVER_STANDINGS URL is used here, not CONS_STANDINGS
         response = requests.get(DRIVER_STANDINGS) 
@@ -394,11 +394,12 @@ def get_circuits():
         clean_circuits = []
         for race in circuits_raw:
             country_name = race["Circuit"]["Location"]["country"]
-            layout_url = TRACK_LAYOUT.get(country_name, "N/A")   
+            country_locality = race["Circuit"]["Location"]["locality"]
+            layout_url = TRACK_LAYOUT.get(country_locality, "N/A")   
             circuit_entry = {
                 "circuitid": race["Circuit"]["circuitId"],
                 "circuitname": race["Circuit"]["circuitName"],
-                "circuitlocation": race["Circuit"]["Location"]["locality"],
+                "circuitlocation": country_locality,
                 "circuitcountry": country_name,
                 "circuitlayout": layout_url
             }

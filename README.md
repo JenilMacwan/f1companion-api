@@ -75,8 +75,8 @@ The server starts at `http://127.0.0.1:5000`. Visit the root endpoint to see all
 | `GET` | `/next_race` | Countdown, weather & next session info |
 | `GET` | `/drivers` | All 2026 drivers |
 | `GET` | `/constructors` | All 2026 constructors (teams) |
-| `GET` | `/driverstandings` | Live WDC standings |
-| `GET` | `/constructorstandings` | Live WCC standings |
+| `GET` | `/driver_standings` | Live WDC standings |
+| `GET` | `/constructor_standings` | Live WCC standings |
 | `GET` | `/circuits` | All 2026 circuit details |
 | `GET` | `/race_results/{round}/{year}` | Results for a specific race |
 | `GET` | `/driver_stats/{driver_id}` | Full career stats for a driver |
