@@ -174,16 +174,25 @@ def get_next_race():
 
         # 2. Earliest Session for Countdown
         # F1 weekends start with FP1. We find the earliest session provided by Jolpica.
-        session_keys = ["FirstPractice", "SecondPractice", "ThirdPractice", "Qualifying", "Sprint", "SprintQualifying"]
+        session_keys = {
+            "FirstPractice": "Practice 1",
+            "SecondPractice": "Practice 2",
+            "ThirdPractice": "Practice 3",
+            "Qualifying": "Qualifying",
+            "Sprint": "Sprint",
+            "SprintQualifying": "Sprint Qualifying"
+        }
         earliest_session_dt = race_dt # Default to race time if no sessions found
+        session_name = "Race"
         
-        for key in session_keys:
+        for key, name in session_keys.items():
             session = next_event.get(key)
             if session:
                 s_str = f"{session['date']}T{session['time']}"
                 s_dt = datetime.fromisoformat(s_str.replace('Z', '+00:00'))
                 if s_dt < earliest_session_dt:
                     earliest_session_dt = s_dt
+                    session_name = name
 
         # 3. Open-Meteo Weather Integration
         lat = next_event["Circuit"]["Location"]["lat"]
@@ -221,7 +230,7 @@ def get_next_race():
             "flag_emoji": get_clean_flag(country),
             "weather": weather_info,
             "countdown": countdown,
-            "next_session": earliest_session_dt.strftime("%Y-%m-%d %H:%M UTC"),
+            "next_session": "Session Name : " + session_name + "  Time Zone : UTC " + earliest_session_dt.strftime("%Y-%m-%d %H:%M UTC"),
             "is_sprint_weekend": "Sprint" in next_event or "SprintQualifying" in next_event
         }
 

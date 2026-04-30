@@ -16,3 +16,5 @@ env/
 # --- System ---
 .DS_Store
 Thumbs.db
+session_keys.json
+fetch_sessions.py
