@@ -264,10 +264,10 @@ def get_drivers():
         clean_drivers = []
         for driver in drivers_raw:
             driver_entry = {
-                "driverid": driver["driverId"],
-                "firstname": driver["givenName"],
-                "lastname": driver["familyName"],
-                "nationality": driver["nationality"],
+                "driverid": driver.get("driverId", "Unknown"),
+                "firstname": driver.get("givenName", "Unknown"),
+                "lastname": driver.get("familyName", "Unknown"),
+                "nationality": driver.get("nationality", "Unknown"),
             }
 
             if "permanentNumber" in driver and driver["permanentNumber"]:
