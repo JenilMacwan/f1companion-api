@@ -1,5 +1,6 @@
 import uvicorn
 import flag
+import concurrent.futures
 import requests
 import feedparser
 import re
@@ -35,7 +36,7 @@ WMO_CODES = {
 
 TRACK_LAYOUT = {
     "Sakhir": "https://github.com/JenilMacwan/f1companion-api/blob/997e3c439135be7d4fcf47fb050d66ce23e96921/assests/track/sakhir-bahrain2026.webp?raw=true",
-    "Melbourne":"",
+    "Melbourne":"https://github.com/JenilMacwan/f1companion-api/blob/5b7986d8e6ea48f9de6e93a548caf5e156f10369/assets/track/australia-melbourne.webp?raw=true",
     "Shanghai":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/shanghai-china.webp?raw=true",
     "Suzuka":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/suzuka-japan.webp?raw=true",
     "Montreal":"https://github.com/JenilMacwan/f1companion-api/blob/b3467d8d473bb572f238ffc018b4dd34fbddf047/assets/track/monteeal%20-%20canada.webp?.raw=true",
@@ -465,173 +466,256 @@ def get_race_results(round: str, year: str):
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error fetching F1 races: {str(e)}")
 
-@app.get("/constructor_stats/{constructor_id}")
-def get_constructor_stats(constructor_id: str):
-    team_wins = 0
-    team_podiums = 0
-    total_gp_entries = 0 # Count of unique race weekends entered
-    
-    offset = 0
-    limit = 100 
+import time
+import concurrent.futures
+
+# --- STATIC F1 CHAMPIONSHIP CACHES ---
+# Hardcoded to prevent rate-limiting Jolpica with 150+ historical queries per startup
+GLOBAL_WDC_MAP = {'michael_schumacher': 7, 'hamilton': 7, 'fangio': 5, 'prost': 4, 'vettel': 4, 'brabham': 3, 'stewart': 3, 'lauda': 3, 'piquet': 3, 'senna': 3, 'max_verstappen': 4, 'ascari': 2, 'clark': 2, 'hill': 2, 'emerson_fittipaldi': 2, 'hakkinen': 2, 'alonso': 2, 'farina': 1, 'hawthorn': 1, 'phil_hill': 1, 'surtees': 1, 'hulme': 1, 'rindt': 1, 'andretti': 1, 'scheckter': 1, 'jones': 1, 'keke_rosberg': 1, 'mansell': 1, 'damon_hill': 1, 'villeneuve': 1, 'raikkonen': 1, 'button': 1, 'nico_rosberg': 1}
+GLOBAL_WCC_MAP = {'ferrari': 16, 'williams': 9, 'mclaren': 8, 'mercedes': 8, 'lotus': 7, 'red_bull': 6, 'cooper': 2, 'brabham': 2, 'renault': 2, 'vanwall': 1, 'brm': 1, 'matra': 1, 'tyrrell': 1, 'benetton': 1, 'brawn': 1}
+GLOBAL_DRIVER_WCC_MAP = {'ferrari': 15, 'mclaren': 12, 'mercedes': 9, 'williams': 7, 'red_bull': 7, 'lotus': 6, 'brabham': 4, 'alfaromeo': 2, 'maserati': 2, 'cooper': 2, 'renault': 2, 'benetton': 2, 'tyrrell': 2, 'brm': 1, 'matra': 1, 'brawn': 1}
+UPDATED_YEARS = set()
+
+def update_dynamic_championships():
+    current_year = datetime.now(timezone.utc).year
+    for year in range(2025, current_year): # Only check 2025 onwards since 1950-2024 is static
+        if year in UPDATED_YEARS: continue
+        try:
+            r1 = requests.get(f"https://api.jolpi.ca/ergast/f1/{year}/driverStandings.json")
+            if r1.status_code == 200:
+                st1 = r1.json()["MRData"]["StandingsTable"]["StandingsLists"]
+                if st1:
+                    d_id = st1[0]["DriverStandings"][0]["Driver"]["driverId"]
+                    c_id = st1[0]["DriverStandings"][0]["Constructors"][0]["constructorId"]
+                    GLOBAL_WDC_MAP[d_id] = GLOBAL_WDC_MAP.get(d_id, 0) + 1
+                    GLOBAL_DRIVER_WCC_MAP[c_id] = GLOBAL_DRIVER_WCC_MAP.get(c_id, 0) + 1
+                    
+            r2 = requests.get(f"https://api.jolpi.ca/ergast/f1/{year}/constructorStandings.json")
+            if r2.status_code == 200:
+                st2 = r2.json()["MRData"]["StandingsTable"]["StandingsLists"]
+                if st2:
+                    c_id2 = st2[0]["ConstructorStandings"][0]["Constructor"]["constructorId"]
+                    GLOBAL_WCC_MAP[c_id2] = GLOBAL_WCC_MAP.get(c_id2, 0) + 1
+                    
+            UPDATED_YEARS.add(year)
+        except: pass
+
+def ensure_champs_fetched():
+    update_dynamic_championships()
+
+@app.get("/constructor_stats")
+def get_constructor_stats():
+    ensure_champs_fetched()
+    current_year = str(datetime.now(timezone.utc).year)
     
     try:
-        # --- 1. FETCH ALL TEAM RACE RESULTS (Pagination) ---
-        while True:
-            # RESULTS_URL fetches every race the team has ever entered
-            RESULTS_URL = f"https://api.jolpi.ca/ergast/f1/constructors/{constructor_id}/results.json?limit={limit}&offset={offset}"
-            response = requests.get(RESULTS_URL)
-            response.raise_for_status()
-            data = response.json()
-            
-            races = data["MRData"]["RaceTable"]["Races"]
-            if not races:
-                break
-                
-            for race in races:
-                # Increment per unique Grand Prix (not per car)
-                total_gp_entries += 1 
-                
-                # Check results for both cars entered by the team
-                for result in race["Results"]:
-                    position = result.get("position")
-                    
-                    if position == "1":
-                        team_wins += 1
-                    if position in ["1", "2", "3"]:
-                        team_podiums += 1
-                        
-            offset += limit
+        current_res = requests.get("https://api.jolpi.ca/ergast/f1/current/constructors.json")
+        current_res.raise_for_status()
+        current_constructors = current_res.json()["MRData"]["ConstructorTable"]["Constructors"]
 
-        # --- 2. CALCULATE PERCENTAGES ---
-        # Win % based on one trophy available per race
-        win_rate = round((team_wins / total_gp_entries * 100), 2) if total_gp_entries > 0 else 0
-        
-        # Podium % based on two cars per team (two chances for a podium per race)
-        podium_rate = round((team_podiums / (total_gp_entries * 2) * 100), 2) if total_gp_entries > 0 else 0
+        current_standings_map = {}
+        try:
+            cs_res = requests.get("https://api.jolpi.ca/ergast/f1/current/constructorStandings.json")
+            if cs_res.status_code == 200:
+                cs_data = cs_res.json()["MRData"]["StandingsTable"]["StandingsLists"]
+                if cs_data:
+                    for standing in cs_data[0]["ConstructorStandings"]:
+                        c_id = standing["Constructor"]["constructorId"]
+                        current_standings_map[c_id] = {
+                            "year": current_year,
+                            "position": standing.get("position", "N/A"),
+                            "points": standing.get("points", "0")
+                        }
+        except: pass
 
-        # --- 3. RETURN CLEANED DATA ---
-        return {
-            "constructor_id": constructor_id,
-            "stats": {
-                "total_races": total_gp_entries,
-                "wins": team_wins,
-                "win_percentage": f"{win_rate}%",
-                "podiums": team_podiums,
-                "podium_percentage": f"{podium_rate}%"
-            }
+        # Baseline stats as provided by the user + estimated podiums for merged lineages up to 2025
+        CONSTRUCTOR_BASE_STATS = {
+            "ferrari": {"wcc": 16, "wdc": 15, "wins": 248, "entries": 1124, "podiums": 813},
+            "mclaren": {"wcc": 10, "wdc": 12, "wins": 203, "entries": 995, "podiums": 522},
+            "mercedes": {"wcc": 8, "wdc": 9, "wins": 134, "entries": 318, "podiums": 296},
+            "red_bull": {"wcc": 6, "wdc": 7, "wins": 130, "entries": 383, "podiums": 281},
+            "williams": {"wcc": 9, "wdc": 7, "wins": 114, "entries": 852, "podiums": 313},
+            "alpine": {"wcc": 2, "wdc": 2, "wins": 35, "entries": 403, "podiums": 212},
+            "aston_martin": {"wcc": 0, "wdc": 0, "wins": 1, "entries": 606, "podiums": 38},
+            "haas": {"wcc": 0, "wdc": 0, "wins": 0, "entries": 182, "podiums": 0},
+            "rb": {"wcc": 0, "wdc": 0, "wins": 2, "entries": 370, "podiums": 5},
+            "audi": {"wcc": 0, "wdc": 0, "wins": 1, "entries": 614, "podiums": 27},
+            "cadillac": {"wcc": 0, "wdc": 0, "wins": 0, "entries": 0, "podiums": 0}
         }
-        
+
+        # Dynamically fetch ONLY the current year's races and add them to the baseline!
+        # This completely skips the need for massive pagination while perfectly merging lineages.
+        current_year_races = []
+        try:
+            res = requests.get(f"https://api.jolpi.ca/ergast/f1/{current_year}/results.json?limit=1000")
+            if res.status_code == 200:
+                current_year_races = res.json()["MRData"]["RaceTable"]["Races"]
+        except: pass
+
+        current_year_stats = {}
+        for race in current_year_races:
+            participating = set()
+            for result in race["Results"]:
+                c_id = result["Constructor"]["constructorId"]
+                participating.add(c_id)
+                if c_id not in current_year_stats:
+                    current_year_stats[c_id] = {"wins": 0, "podiums": 0, "entries": 0}
+                    
+                pos = result.get("position")
+                if pos == "1": current_year_stats[c_id]["wins"] += 1
+                if pos in ["1", "2", "3"]: current_year_stats[c_id]["podiums"] += 1
+                
+            for c_id in participating:
+                current_year_stats[c_id]["entries"] += 1
+
+        grid_stats = []
+        for constructor in current_constructors:
+            c_id = constructor["constructorId"]
+            
+            # Start with baseline (or 0 if somehow not mapped)
+            base = CONSTRUCTOR_BASE_STATS.get(c_id, {"wcc": 0, "wdc": 0, "wins": 0, "entries": 0, "podiums": 0})
+            
+            # Add current year
+            cy_stats = current_year_stats.get(c_id, {"wins": 0, "podiums": 0, "entries": 0})
+            
+            total_wins = base["wins"] + cy_stats["wins"]
+            total_podiums = base["podiums"] + cy_stats["podiums"]
+            total_entries = base["entries"] + cy_stats["entries"]
+            
+            win_rate = round((total_wins / total_entries * 100), 2) if total_entries > 0 else 0
+            podium_rate = round((total_podiums / (total_entries * 2) * 100), 2) if total_entries > 0 else 0
+            
+            c_stats = current_standings_map.get(c_id, {"year": current_year, "position": "N/A", "points": "0"})
+            
+            grid_stats.append({
+                "constructor_id": c_id,
+                "constructor_name": constructor["name"],
+                "stats": {
+                    "constructor_championships": base["wcc"],
+                    "driver_championships": base["wdc"],
+                    "total_races": total_entries,
+                    "wins": total_wins,
+                    "win_percentage": f"{win_rate}%",
+                    "podiums": total_podiums,
+                    "podium_percentage": f"{podium_rate}%",
+                    "current_season": c_stats
+                }
+            })
+            
+        return {
+            "season": current_year,
+            "total_constructors": len(grid_stats),
+            "constructor_stats": grid_stats
+        }
+
     except Exception as e:
-        # Generic error handling to prevent API crashes
         raise HTTPException(status_code=500, detail=f"Error processing stats: {str(e)}")
 
-@app.get("/driver_stats/{driver_id}")
-def get_driver_stats(driver_id: str):
-    career_wins = 0
-    career_podiums = 0
-    total_points = 0.0
-    career_pole = 0
-    active_seasons = set()
-    
-    # This list will hold EVERY race, bypassing the 100 limit
-    career_history = [] 
-    
-    offset = 0
-    limit = 100 # We must play by Jolpica's 100-item rule
+
+@app.get("/driver_stats")
+def get_driver_stats():
+    ensure_champs_fetched()
+    current_year = str(datetime.now(timezone.utc).year)
     
     try:
-        while True:
-            # The 'offset' moves forward by 100 every time the loop runs
-            RESULTS_URL = f"https://api.jolpi.ca/ergast/f1/drivers/{driver_id}/results.json?limit={limit}&offset={offset}"
-            
-            response = requests.get(RESULTS_URL)
-            response.raise_for_status()
-            data = response.json()
-            
-            races = data["MRData"]["RaceTable"]["Races"]
-            
-            # If the list is empty, we have successfully downloaded the entire career!
-            if not races:
-                break
-                
-            for race in races:
-                active_seasons.add(race["season"])
-                result = race["Results"][0]
-                
-                points_scored = float(result.get("points", 0.0))
-                total_points += points_scored
-                
-                position = result.get("position")
-                if position == "1":
-                    career_wins += 1
-                if position in ["1", "2", "3"]:
-                    career_podiums += 1
-                
-                pole = result.get("grid")
-                if pole == "1":
-                    career_pole += 1
-                    
-                # Add this race to our massive master list
-                career_history.append({
-                    "season": race["season"],
-                    "round": race["round"],
-                    "race_name": race["raceName"],
-                    "constructor": result["Constructor"]["name"],
-                    "grid": result["grid"],
-                    "finish_position": position,
-                    "points": points_scored
-                })
-                
-            # Move the offset forward to grab the next "page" of 100 races
-            offset += limit
-            
-        if not career_history:
-            return {"error": "No career data found for this driver."}
-            
-        # --- 2. FETCH WORLD CHAMPIONSHIPS (WDC) ---
-        wdc_count = 0
+        current_res = requests.get("https://api.jolpi.ca/ergast/f1/current/drivers.json")
+        current_res.raise_for_status()
+        current_drivers = current_res.json()["MRData"]["DriverTable"]["Drivers"]
         
-        # Since Jolpica demands a year, we loop through the years they actually raced!
-        for year in active_seasons:
-            # Crucial: Skip the current unfinished season so we don't accidentally 
-            # crown someone a World Champion just because they won Round 1!
-            if year == "2026": 
-                continue
-                
-            try:
-                # Ask the API for their specific standing in that specific year
-                WDC_URL = f"https://api.jolpi.ca/ergast/f1/{year}/drivers/{driver_id}/driverstandings.json"
-                wdc_response = requests.get(WDC_URL)
-                
-                if wdc_response.status_code == 200:
-                    wdc_data = wdc_response.json()
-                    standings_list = wdc_data["MRData"]["StandingsTable"]["StandingsLists"]
-                    
-                    # If data exists and their position is "1", add a Championship!
-                    if standings_list:
-                        standing = standings_list[0]["DriverStandings"][0]
-                        if standing.get("position") == "1":
-                            wdc_count += 1
-                            
-            except Exception as e:
-                print(f"Warning - WDC Fetch Error for {year}: {e}")
-                wdc_count = "N/A"
+        current_standings_map = {}
+        try:
+            cs_res = requests.get("https://api.jolpi.ca/ergast/f1/current/driverStandings.json")
+            if cs_res.status_code == 200:
+                cs_data = cs_res.json()["MRData"]["StandingsTable"]["StandingsLists"]
+                if cs_data:
+                    for standing in cs_data[0]["DriverStandings"]:
+                        d_id = standing["Driver"]["driverId"]
+                        current_standings_map[d_id] = {
+                            "year": current_year,
+                            "position": standing.get("position", "N/A"),
+                            "points": standing.get("points", "0")
+                        }
+        except: pass
 
-        return {
-            "driver_id": driver_id,
-            "driver_name": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
-            "career_stats": {
-                "world_championships": wdc_count,
-                "total_races": len(career_history),
-                "total_pole": career_pole,
-                "total_wins": career_wins,
-                "total_podiums": career_podiums,
-                "career_points": round(total_points, 1),
-                "total_seasons": len(active_seasons)
-            },
-            "history": career_history 
+        DRIVER_BASE_STATS = {
+            "albon": {"total_races": 132, "total_pole": 0, "total_wins": 0, "total_podiums": 2, "career_points": 308.0, "total_seasons": 6},
+            "alonso": {"total_races": 428, "total_pole": 22, "total_wins": 32, "total_podiums": 106, "career_points": 2380.0, "total_seasons": 22},
+            "antonelli": {"total_races": 24, "total_pole": 0, "total_wins": 0, "total_podiums": 3, "career_points": 135.0, "total_seasons": 1},
+            "bearman": {"total_races": 27, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 46.0, "total_seasons": 2},
+            "bortoleto": {"total_races": 24, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 19.0, "total_seasons": 1},
+            "bottas": {"total_races": 247, "total_pole": 20, "total_wins": 10, "total_podiums": 67, "career_points": 1788.0, "total_seasons": 12},
+            "colapinto": {"total_races": 27, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 5.0, "total_seasons": 2},
+            "jak_crawford": {"total_races": 0, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 0.0, "total_seasons": 0},
+            "gasly": {"total_races": 178, "total_pole": 0, "total_wins": 1, "total_podiums": 5, "career_points": 446.0, "total_seasons": 9},
+            "hadjar": {"total_races": 24, "total_pole": 0, "total_wins": 0, "total_podiums": 1, "career_points": 50.0, "total_seasons": 1},
+            "hamilton": {"total_races": 380, "total_pole": 104, "total_wins": 105, "total_podiums": 202, "career_points": 4955.5, "total_seasons": 19},
+            "hulkenberg": {"total_races": 254, "total_pole": 1, "total_wins": 0, "total_podiums": 1, "career_points": 614.0, "total_seasons": 14},
+            "lawson": {"total_races": 35, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 44.0, "total_seasons": 3},
+            "leclerc": {"total_races": 173, "total_pole": 27, "total_wins": 8, "total_podiums": 50, "career_points": 1588.0, "total_seasons": 8},
+            "arvid_lindblad": {"total_races": 0, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 0.0, "total_seasons": 0},
+            "norris": {"total_races": 152, "total_pole": 16, "total_wins": 11, "total_podiums": 44, "career_points": 1344.0, "total_seasons": 7},
+            "ocon": {"total_races": 180, "total_pole": 0, "total_wins": 1, "total_podiums": 4, "career_points": 474.0, "total_seasons": 9},
+            "piastri": {"total_races": 70, "total_pole": 6, "total_wins": 9, "total_podiums": 26, "career_points": 728.0, "total_seasons": 3},
+            "perez": {"total_races": 283, "total_pole": 3, "total_wins": 6, "total_podiums": 39, "career_points": 1585.0, "total_seasons": 14},
+            "russell": {"total_races": 152, "total_pole": 8, "total_wins": 5, "total_podiums": 24, "career_points": 953.0, "total_seasons": 7},
+            "sainz": {"total_races": 232, "total_pole": 6, "total_wins": 4, "total_podiums": 29, "career_points": 1257.5, "total_seasons": 11},
+            "stroll": {"total_races": 191, "total_pole": 1, "total_wins": 0, "total_podiums": 3, "career_points": 315.0, "total_seasons": 9},
+            "max_verstappen": {"total_races": 233, "total_pole": 48, "total_wins": 71, "total_podiums": 127, "career_points": 3301.5, "total_seasons": 11}
         }
-        
+
+        current_year_races = []
+        try:
+            res = requests.get(f"https://api.jolpi.ca/ergast/f1/{current_year}/results.json?limit=1000")
+            if res.status_code == 200:
+                current_year_races = res.json()["MRData"]["RaceTable"]["Races"]
+        except: pass
+
+        current_year_stats = {}
+        for race in current_year_races:
+            for result in race["Results"]:
+                d_id = result["Driver"]["driverId"]
+                if d_id not in current_year_stats:
+                    current_year_stats[d_id] = {"races": 0, "wins": 0, "podiums": 0, "pole": 0, "points": 0.0}
+                    
+                current_year_stats[d_id]["races"] += 1
+                current_year_stats[d_id]["points"] += float(result.get("points", 0.0))
+                
+                pos = result.get("position")
+                if pos == "1": current_year_stats[d_id]["wins"] += 1
+                if pos in ["1", "2", "3"]: current_year_stats[d_id]["podiums"] += 1
+                if result.get("grid") == "1": current_year_stats[d_id]["pole"] += 1
+
+        grid_stats = []
+        for driver in current_drivers:
+            d_id = driver["driverId"]
+            base = DRIVER_BASE_STATS.get(d_id, {"total_races": 0, "total_pole": 0, "total_wins": 0, "total_podiums": 0, "career_points": 0.0, "total_seasons": 0})
+            cy_stats = current_year_stats.get(d_id, {"races": 0, "wins": 0, "podiums": 0, "pole": 0, "points": 0.0})
+            
+            seasons_played = base["total_seasons"] + 1
+            wdc_count = GLOBAL_WDC_MAP.get(d_id, 0)
+            c_stats = current_standings_map.get(d_id, {"year": current_year, "position": "N/A", "points": "0"})
+
+            grid_stats.append({
+                "driver_id": d_id,
+                "driver_name": f"{driver['givenName']} {driver['familyName']}",
+                "career_stats": {
+                    "world_championships": wdc_count,
+                    "total_races": base["total_races"] + cy_stats["races"],
+                    "total_pole": base["total_pole"] + cy_stats["pole"],
+                    "total_wins": base["total_wins"] + cy_stats["wins"],
+                    "total_podiums": base["total_podiums"] + cy_stats["podiums"],
+                    "career_points": round(base["career_points"] + cy_stats["points"], 1),
+                    "total_seasons": seasons_played,
+                    "current_season": c_stats
+                },
+            })
+            
+        return {
+            "season": current_year,
+            "total_drivers": len(grid_stats),
+            "driver_stats": grid_stats
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"API Error: {str(e)}")
 

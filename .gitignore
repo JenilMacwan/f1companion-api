@@ -18,3 +18,4 @@ env/
 Thumbs.db
 session_keys.json
 fetch_sessions.py
+scratch_stats.json
