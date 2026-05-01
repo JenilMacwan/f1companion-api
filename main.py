@@ -84,8 +84,8 @@ def read_root():
             {"path": "/constructor_standings", "description": "WCC Live Standings"},
             {"path": "/circuits", "description": "Information of all 2026 circuits"},
             {"path": "/race_results/{race_id}/{year}", "description": "Results of a specific race"},
-            {"path": "/driver_stats/{driver_id}", "description": "Deep career stats for drivers"},
-            {"path": "/constructor_stats/{constructor_id}", "description": "Team performance and history"},
+            {"path": "/driver_stats", "description": "Deep career stats for drivers"},
+            {"path": "/constructor_stats", "description": "Team performance and history"},
             {"path": "/news", "description": "Latest F1 news"}
         ],
         "status": "online"
