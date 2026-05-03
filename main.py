@@ -116,7 +116,10 @@ def get_schedule():
                 "circuitcountry": race["Circuit"]["Location"]["country"],
 
                 "GrandPrix": race["date"],
-                "time": race.get("time", "TBA")
+                "time": race.get("time", "TBA"),
+                "is_completed": datetime.fromisoformat(
+                    f"{race['date']}T{race.get('time', '00:00:00Z')}".replace('Z', '+00:00')
+                ) < datetime.now(timezone.utc)
             }
 
             sessions = [
@@ -198,15 +201,22 @@ def get_next_race():
         session_name = "Race"
         ongoing_session_name = None
 
+
+        SESSION_DURATIONS = {
+            "Practice 1": 60, "Practice 2": 60, "Practice 3": 60,
+            "Qualifying": 60, "Sprint Qualifying": 45,
+            "Sprint": 30, "Race": 120
+        }
+
         for i, s in enumerate(sessions_list):
             if s["dt"] > now:
                 target_session_dt = s["dt"]
                 session_name = s["name"]
                 
-                # Check if the previous session is still ongoing (assuming ~2 hours duration)
                 if i > 0:
                     prev_s = sessions_list[i-1]
-                    if (now - prev_s["dt"]).total_seconds() < 7200:
+                    duration = SESSION_DURATIONS.get(prev_s["name"], 60)
+                    if (now - prev_s["dt"]).total_seconds() < (duration * 60):
                         ongoing_session_name = prev_s["name"]
                 break
 
@@ -225,8 +235,8 @@ def get_next_race():
                 # "weather_code": w_res['current']['weather_code'], 
                 "condition": WMO_CODES.get(w_res['current']['weather_code'], "Unknown")# Use this to map icons in Flutter
             }
-        except:
-            pass
+        except Exception as e:
+            weather_info = {"temp": "N/A", "condition": "Unknown", "error": str(e)}
 
         # 4. Countdown Calculation
         delta = target_session_dt - now
@@ -439,7 +449,7 @@ def get_circuits():
 
         return {
             "season": data["MRData"]["RaceTable"]["season"], 
-            "circuits": len(clean_circuits), 
+            "total_circuits": len(clean_circuits), 
             "circuits": clean_circuits
         }
     except requests.exceptions.RequestException as e:
@@ -745,8 +755,14 @@ def get_driver_stats():
 @app.get("/news")
 def get_f1_news():
     
-    RSS_URL = "https://www.skysports.com/rss/12433"
-    feed = feedparser.parse(RSS_URL)
+    PRIMARY_RSS = "https://www.skysports.com/rss/12433"
+    FALLBACK_RSS = "https://www.autosport.com/rss/f1/news"
+    feed = feedparser.parse(PRIMARY_RSS)
+    source_name = "Sky Sports F1"
+    
+    if not feed.entries:
+        feed = feedparser.parse(FALLBACK_RSS)
+        source_name = "Autosport F1"
     
     news_list = []
     try:
@@ -775,12 +791,12 @@ def get_f1_news():
                 "description": clean_summary[:150] + "...", # Short snippet
                 "link": entry.get('link', ''),
                 "published": entry.get('published', ''),
-                "image": image_url if image_url else "https://raw.githubusercontent.com/JenilMacwan/f1companion-api/main/assets/track/f1_placeholder.webp"
+                "image": image_url if image_url else "No Image Available"
             })
     
         return {
             "status": "ok",
-            "source": "Sky Sports F1",
+            "source": source_name,
             "articles": news_list
         }
 
