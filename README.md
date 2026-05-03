@@ -79,16 +79,16 @@ The server starts at `http://127.0.0.1:5000`. Visit the root endpoint to see all
 | `GET` | `/constructor_standings` | Live WCC standings |
 | `GET` | `/circuits` | All 2026 circuit details |
 | `GET` | `/race_results/{round}/{year}` | Results for a specific race |
-| `GET` | `/driver_stats/{driver_id}` | Full career stats for a driver |
-| `GET` | `/constructor_stats/{constructor_id}` | All-time stats for a constructor |
+| `GET` | `/driver_stats` | Full career stats for a drivers |
+| `GET` | `/constructor_stats` | All-time stats for a constructors |
 | `GET` | `/news` | Latest F1 news (top 10 articles) |
 
 ### Example Requests
 
 ```
 GET /race_results/1/2025        → Results for Round 1 of 2025
-GET /driver_stats/hamilton      → Lewis Hamilton's career stats
-GET /constructor_stats/ferrari  → Ferrari's all-time win/podium rates
+GET /driver_stats/              → Career stats of all the drivers in current grid
+GET /constructor_stats/         → Career Stats for all teams in current grid
 ```
 
 ---
