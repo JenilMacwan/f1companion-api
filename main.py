@@ -173,8 +173,7 @@ def get_next_race():
         if not next_event:
             return {"message": "Season concluded."}
 
-        # 2. Earliest Session for Countdown
-        # F1 weekends start with FP1. We find the earliest session provided by Jolpica.
+        # 2. Target Session for Countdown
         session_keys = {
             "FirstPractice": "Practice 1",
             "SecondPractice": "Practice 2",
@@ -183,17 +182,33 @@ def get_next_race():
             "Sprint": "Sprint",
             "SprintQualifying": "Sprint Qualifying"
         }
-        earliest_session_dt = race_dt # Default to race time if no sessions found
-        session_name = "Race"
         
+        sessions_list = [{"name": "Race", "dt": race_dt}]
         for key, name in session_keys.items():
             session = next_event.get(key)
             if session:
                 s_str = f"{session['date']}T{session['time']}"
                 s_dt = datetime.fromisoformat(s_str.replace('Z', '+00:00'))
-                if s_dt < earliest_session_dt:
-                    earliest_session_dt = s_dt
-                    session_name = name
+                sessions_list.append({"name": name, "dt": s_dt})
+
+        # Sort sessions chronologically
+        sessions_list.sort(key=lambda x: x["dt"])
+
+        target_session_dt = race_dt
+        session_name = "Race"
+        ongoing_session_name = None
+
+        for i, s in enumerate(sessions_list):
+            if s["dt"] > now:
+                target_session_dt = s["dt"]
+                session_name = s["name"]
+                
+                # Check if the previous session is still ongoing (assuming ~2 hours duration)
+                if i > 0:
+                    prev_s = sessions_list[i-1]
+                    if (now - prev_s["dt"]).total_seconds() < 7200:
+                        ongoing_session_name = prev_s["name"]
+                break
 
         # 3. Open-Meteo Weather Integration
         lat = next_event["Circuit"]["Location"]["lat"]
@@ -214,12 +229,18 @@ def get_next_race():
             pass
 
         # 4. Countdown Calculation
-        delta = earliest_session_dt - now
+        delta = target_session_dt - now
         countdown = {
             "days": delta.days,
             "hours": delta.seconds // 3600,
-            "minutes": (delta.seconds // 60) % 60
+            "minutes": (delta.seconds // 60) % 60,
+            "seconds": delta.seconds % 60
         }
+
+        if ongoing_session_name:
+            next_session_str = f"Ongoing : {ongoing_session_name} | Next : {session_name}  Time Zone : UTC {target_session_dt.strftime('%Y-%m-%d %H:%M UTC')}"
+        else:
+            next_session_str = f"Session Name : {session_name}  Time Zone : UTC {target_session_dt.strftime('%Y-%m-%d %H:%M UTC')}"
 
         # 5. Country Flag Helper
         # We provide the ISO country code so Flutter can easily fetch a flag image
@@ -231,7 +252,8 @@ def get_next_race():
             "flag_emoji": get_clean_flag(country),
             "weather": weather_info,
             "countdown": countdown,
-            "next_session": "Session Name : " + session_name + "  Time Zone : UTC " + earliest_session_dt.strftime("%Y-%m-%d %H:%M UTC"),
+            "next_session": next_session_str,
+            "ongoing_session": ongoing_session_name,
             "is_sprint_weekend": "Sprint" in next_event or "SprintQualifying" in next_event
         }
 
