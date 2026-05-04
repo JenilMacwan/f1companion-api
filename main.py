@@ -791,12 +791,12 @@ def get_f1_news():
                 "description": clean_summary[:150] + "...", # Short snippet
                 "link": entry.get('link', ''),
                 "published": entry.get('published', ''),
-                "image": image_url if image_url else "No Image Available"
+                "image": image_url if image_url else "No Image Available",
+                "source": source_name
             })
     
         return {
             "status": "ok",
-            "source": source_name,
             "articles": news_list
         }
 
