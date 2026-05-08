@@ -19,3 +19,7 @@ Thumbs.db
 session_keys.json
 fetch_sessions.py
 scratch_stats.json
+response.json
+flag_src.txt
+flag_test.txt
+
