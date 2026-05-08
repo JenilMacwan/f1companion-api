@@ -1,5 +1,5 @@
 fastapi
 uvicorn
 requests
-flag
+emoji-country-flag
 feedparser
