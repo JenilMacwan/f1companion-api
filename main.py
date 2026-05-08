@@ -275,7 +275,11 @@ def get_clean_flag(country_name):
     # F1 countries often use shorthand, so we map them to ISO-2 codes first
     mapping = {
         "UK": "GB", "USA": "US", "UAE": "AE", "Netherlands": "NL", 
-        "Saudi Arabia": "SA", "Italy": "IT", "Japan": "JP"
+        "Saudi Arabia": "SA", "Italy": "IT", "Japan": "JP", "Canada": "CA", 
+        "Australia": "AU", "Spain": "ES", "Austria": "AT", "Hungary": "HU", 
+        "Belgium": "BE", "Monaco": "MC", "Azerbaijan": "AZ", "Singapore": "SG", 
+        "Brazil": "BR", "Las Vegas": "US", "Bahrain": "BH", "Qatar": "QA",
+        "China": "CN", "USA": "US", "Monza" : "IT"
     }
     iso_code = mapping.get(country_name, country_name[:2].upper())
     
