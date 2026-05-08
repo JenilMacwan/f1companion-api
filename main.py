@@ -290,8 +290,7 @@ def get_clean_flag(country_name):
         # This library ensures the characters are paired correctly for modern UIs
         return flag.flag(iso_code) 
     except Exception as e:
-        with open("flag_error.log", "a", encoding="utf-8") as f:
-            f.write(f"Error for {repr(country_name)} with iso_code {repr(iso_code)}: {type(e).__name__} - {e}\n")
+        print(f"Error for {repr(country_name)} with iso_code {repr(iso_code)}: {type(e).__name__} - {e}")
         return "🏁" # Fallback if code is invalid
 
 @app.get("/drivers")
