@@ -259,6 +259,7 @@ def get_next_race():
         return {
             "race_name": next_event["raceName"],
             "circuit": next_event["Circuit"]["circuitName"],
+            "country": country,
             "flag_emoji": get_clean_flag(country),
             "weather": weather_info,
             "countdown": countdown,
@@ -279,7 +280,9 @@ def get_clean_flag(country_name):
         "Australia": "AU", "Spain": "ES", "Austria": "AT", "Hungary": "HU", 
         "Belgium": "BE", "Monaco": "MC", "Azerbaijan": "AZ", "Singapore": "SG", 
         "Brazil": "BR", "Las Vegas": "US", "Bahrain": "BH", "Qatar": "QA",
-        "China": "CN", "USA": "US", "Monza" : "IT"
+        "China": "CN", "Monza": "IT", "Mexico": "MX", "Germany": "DE", 
+        "Portugal": "PT", "Turkey": "TR", "Malaysia": "MY", "South Africa": "ZA", 
+        "South Korea": "KR", "Sweden": "SE", "Switzerland": "CH", "France": "FR"
     }
     iso_code = mapping.get(country_name, country_name[:2].upper())
     
