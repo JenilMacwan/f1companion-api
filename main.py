@@ -257,6 +257,7 @@ def get_next_race():
         country = next_event["Circuit"]["Location"]["country"]
 
         return {
+            "round": race["round"],
             "race_name": next_event["raceName"],
             "circuit": next_event["Circuit"]["circuitName"],
             "country": country,
