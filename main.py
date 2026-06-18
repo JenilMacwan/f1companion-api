@@ -369,15 +369,35 @@ def get_constructor_standings():
                 "constructors": []
             }
 
+        # Fetch driver standings to map drivers to constructors
+        driver_resp = requests.get(DRIVER_STANDINGS)
+        driver_resp.raise_for_status()
+        driver_data = driver_resp.json()
+        
+        driver_standings_lists = driver_data["MRData"]["StandingsTable"]["StandingsLists"]
+        constructor_drivers = {}
+        if driver_standings_lists:
+            for d_item in driver_standings_lists[0]["DriverStandings"]:
+                driver_info = d_item.get("Driver", {})
+                d_name = f"{driver_info.get('givenName')} {driver_info.get('familyName')}"
+                for c in d_item.get("Constructors", []):
+                    c_id = c.get("constructorId")
+                    if c_id not in constructor_drivers:
+                        constructor_drivers[c_id] = []
+                    constructor_drivers[c_id].append(d_name)
+
         # If data exists, clean it
         standing_raw = standings_lists[0]["ConstructorStandings"]
         clean_constructors = []
         for item in standing_raw:
             cons_data = item.get("Constructor", {})
+            c_id = cons_data.get("constructorId")
+            drivers = constructor_drivers.get(c_id, [])
             clean_constructors.append({
                 "position": item.get("position"),
                 "points": item.get("points"),
                 "name": cons_data.get("name", "Unknown"),
+                "drivers": drivers if drivers else "N/A",
                 "nationality": cons_data.get("nationality", "N/A")
             })
 
@@ -410,15 +430,20 @@ def get_driver_standings():
 
         # Access index [0] only after verifying it exists
         drivers_raw = standings_lists[0]["DriverStandings"]
+        
 
         clean_drivers = []
         for item in drivers_raw:
             driver_data = item.get("Driver", {})
+            constructors = item.get("Constructors", [])
+            constructor_id = constructors[0].get("constructorId", "N/A") if constructors else "N/A"
+            constructor_name = constructors[0].get("name", "N/A") if constructors else "N/A"
             clean_drivers.append({
                 "position": item.get("position"),
                 "points": item.get("points"),
                 "driverid": driver_data.get("driverId"),
                 "name": f"{driver_data.get('givenName')} {driver_data.get('familyName')}",
+                "team_name": constructor_name,
                 "nationality": driver_data.get("nationality", "N/A"),
                 "url": driver_data.get("url", "No URL")
             })
