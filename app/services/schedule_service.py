@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.core.config import F1_SCHEDULE_URL
 from app.core.http_client import http_client
 from app.utils.datetime_utils import parse_race_datetime
+from app.utils.flags import get_clean_flag
 
 
 def get_schedule():
