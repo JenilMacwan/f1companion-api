@@ -1,5 +1,7 @@
 import uvicorn
 import flag
+import requests
+from datetime import datetime, timezone
 import concurrent.futures
 import requests
 import feedparser
@@ -149,8 +151,7 @@ def get_schedule():
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error fetching F1 schedule: {str(e)}")
 
-import requests
-from datetime import datetime, timezone
+
 
 @app.get("/next_race")
 def get_next_race():
@@ -526,7 +527,7 @@ def get_race_results(round: str, year: str):
         return {
             "season": data["MRData"]["RaceTable"]["season"],
             "round": race["round"],
-            "racename": race["raceName"],
+            "race_name": race["raceName"],
             "results": clean_results
         }
     except requests.exceptions.RequestException as e:
