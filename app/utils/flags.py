@@ -10,18 +10,6 @@ from app.core.logging import logger
 
 
 def get_clean_flag(country_name):
-    """
-    Convert a country name to its flag emoji.
-
-    Uses the COUNTRY_ISO_MAPPING for F1-specific country names,
-    falling back to the first two characters uppercased as an ISO code guess.
-
-    Args:
-        country_name: The country name from the Jolpica API.
-
-    Returns:
-        Flag emoji string, or 🏁 if conversion fails.
-    """
     iso_code = COUNTRY_ISO_MAPPING.get(country_name, country_name[:2].upper())
 
     try:

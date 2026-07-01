@@ -26,13 +26,15 @@ def get_schedule():
 
     clean_schedule = []
     for race in races_raw:
+        country = race["Circuit"]["Location"]["country"]
         race_entry = {
             "round": race["round"],
+            "flag_emoji": get_clean_flag(country),
             "racename": race["raceName"],
             "circuitid": race["Circuit"]["circuitId"],
             "circuitname": race["Circuit"]["circuitName"],
             "circuitlocation": race["Circuit"]["Location"]["locality"],
-            "circuitcountry": race["Circuit"]["Location"]["country"],
+            "circuitcountry": country,
             "GrandPrix": race["date"],
             "time": race.get("time", "TBA"),
             "is_completed": parse_race_datetime(

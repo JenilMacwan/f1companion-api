@@ -15,16 +15,7 @@ from app.utils.datetime_utils import parse_race_datetime
 
 
 def get_next_race():
-    """
-    Determine the next race and return countdown, weather, and session info.
 
-    Returns:
-        Dict with race info, countdown, weather, and session details.
-        Returns a season-concluded message if no future races exist.
-
-    Raises:
-        Exception: On any processing failure.
-    """
     data = http_client.fetch_json(F1_SCHEDULE_URL)
     now = datetime.now(timezone.utc)
     races = data["MRData"]["RaceTable"]["Races"]
