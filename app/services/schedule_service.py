@@ -6,7 +6,7 @@ and formatting the schedule response.
 """
 
 from datetime import datetime, timezone
-from app.core.config import F1_SCHEDULE_URL
+from app.core.config import SCHEDULE_URL
 from app.core.http_client import http_client
 from app.utils.datetime_utils import parse_race_datetime
 from app.utils.flags import get_clean_flag
@@ -22,7 +22,7 @@ def get_schedule():
     Raises:
         requests.exceptions.RequestException: On API fetch failure.
     """
-    data = http_client.fetch_json(F1_SCHEDULE_URL)
+    data = http_client.fetch_json(SCHEDULE_URL)
     races_raw = data["MRData"]["RaceTable"]["Races"]
 
     clean_schedule = []

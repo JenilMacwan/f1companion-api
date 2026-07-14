@@ -7,9 +7,9 @@ Endpoint: /circuits
 from fastapi import APIRouter, HTTPException
 import requests
 
-from app.core.config import F1_SCHEDULE_URL
-from app.core.constants import TRACK_LAYOUT
+from app.core.config import SCHEDULE_URL
 from app.core.http_client import http_client
+from app.utils.helpers import get_track_layout
 
 router = APIRouter()
 
@@ -17,14 +17,14 @@ router = APIRouter()
 @router.get("/circuits")
 def circuits():
     try:
-        data = http_client.fetch_json(F1_SCHEDULE_URL)
+        data = http_client.fetch_json(SCHEDULE_URL)
         circuits_raw = data["MRData"]["RaceTable"]["Races"]
 
         clean_circuits = []
         for race in circuits_raw:
             country_name = race["Circuit"]["Location"]["country"]
             country_locality = race["Circuit"]["Location"]["locality"]
-            layout_url = TRACK_LAYOUT.get(country_locality, "N/A")
+            layout_url = get_track_layout(country_locality)
             circuit_entry = {
                 "circuitid": race["Circuit"]["circuitId"],
                 "circuitname": race["Circuit"]["circuitName"],

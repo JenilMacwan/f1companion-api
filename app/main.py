@@ -1,20 +1,11 @@
 """
 F1 Companion API — Main Application Entry Point.
 
-This file is minimal. Its responsibilities are limited to:
-- Creating the FastAPI application
-- Registering middleware (CORS)
-- Including routers
-- Starting the application
-
-No endpoint logic exists here.
 """
 
 import sys
 from pathlib import Path
 
-# Ensure the project root is on sys.path so 'app' is importable
-# when running this file directly (e.g., python app/main.py)
 _project_root = str(Path(__file__).resolve().parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)

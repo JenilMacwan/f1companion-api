@@ -8,12 +8,13 @@ championship calculations, and dynamic yearly updates.
 from datetime import datetime, timezone
 from app.core.http_client import http_client
 from app.core.logging import logger
+from app.core.config import STATS_BASE_URL
 from app.data.championships import (
     GLOBAL_WDC_MAP, GLOBAL_WCC_MAP, GLOBAL_DRIVER_WCC_MAP, UPDATED_YEARS
 )
 from app.data.driver_stats import DRIVER_BASE_STATS
 from app.data.constructor_stats import CONSTRUCTOR_BASE_STATS
-
+from app.utils.helpers import stats
 
 def update_dynamic_championships():
     """
@@ -29,7 +30,7 @@ def update_dynamic_championships():
             continue
         try:
             r1 = http_client.fetch_json_safe(
-                f"https://api.jolpi.ca/ergast/f1/{year}/driverStandings.json"
+                stats(f"{year}/driverStandings.json")
             )
             if r1:
                 st1 = r1["MRData"]["StandingsTable"]["StandingsLists"]
@@ -40,7 +41,7 @@ def update_dynamic_championships():
                     GLOBAL_DRIVER_WCC_MAP[c_id] = GLOBAL_DRIVER_WCC_MAP.get(c_id, 0) + 1
 
             r2 = http_client.fetch_json_safe(
-                f"https://api.jolpi.ca/ergast/f1/{year}/constructorStandings.json"
+                stats(f"{year}/constructorStandings.json")
             )
             if r2:
                 st2 = r2["MRData"]["StandingsTable"]["StandingsLists"]
@@ -74,7 +75,7 @@ def get_constructor_stats():
     current_year = str(datetime.now(timezone.utc).year)
 
     current_res = http_client.fetch_json(
-        "https://api.jolpi.ca/ergast/f1/current/constructors.json"
+        stats("current/constructors.json")
     )
     current_constructors = current_res["MRData"]["ConstructorTable"]["Constructors"]
 
@@ -82,7 +83,7 @@ def get_constructor_stats():
     current_standings_map = {}
     try:
         cs_res = http_client.fetch_json_safe(
-            "https://api.jolpi.ca/ergast/f1/current/constructorStandings.json"
+            stats("current/constructorStandings.json")
         )
         if cs_res:
             cs_data = cs_res["MRData"]["StandingsTable"]["StandingsLists"]
@@ -101,7 +102,7 @@ def get_constructor_stats():
     current_year_races = []
     try:
         res = http_client.fetch_json_safe(
-            f"https://api.jolpi.ca/ergast/f1/{current_year}/results.json?limit=1000"
+            stats(f"{current_year}/results.json?limit=1000")
         )
         if res:
             current_year_races = res["MRData"]["RaceTable"]["Races"]
@@ -188,7 +189,7 @@ def get_driver_stats():
     current_year = str(datetime.now(timezone.utc).year)
 
     current_res = http_client.fetch_json(
-        "https://api.jolpi.ca/ergast/f1/current/drivers.json"
+        stats("current/drivers.json")
     )
     current_drivers = current_res["MRData"]["DriverTable"]["Drivers"]
 
@@ -196,7 +197,7 @@ def get_driver_stats():
     current_standings_map = {}
     try:
         cs_res = http_client.fetch_json_safe(
-            "https://api.jolpi.ca/ergast/f1/current/driverStandings.json"
+            stats("current/driverStandings.json")
         )
         if cs_res:
             cs_data = cs_res["MRData"]["StandingsTable"]["StandingsLists"]
@@ -215,7 +216,7 @@ def get_driver_stats():
     current_year_races = []
     try:
         res = http_client.fetch_json_safe(
-            f"https://api.jolpi.ca/ergast/f1/{current_year}/results.json?limit=1000"
+            stats(f"{current_year}/results.json?limit=1000")
         )
         if res:
             current_year_races = res["MRData"]["RaceTable"]["Races"]

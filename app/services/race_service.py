@@ -6,7 +6,7 @@ countdown calculations, sprint weekend detection, and race results.
 """
 
 from datetime import datetime, timezone
-from app.core.config import F1_SCHEDULE_URL
+from app.core.config import SCHEDULE_URL
 from app.core.constants import SESSION_KEYS, SESSION_DURATIONS
 from app.core.http_client import http_client
 from app.services.weather_service import get_track_weather
@@ -16,7 +16,7 @@ from app.utils.datetime_utils import parse_race_datetime
 
 def get_next_race():
 
-    data = http_client.fetch_json(F1_SCHEDULE_URL)
+    data = http_client.fetch_json(SCHEDULE_URL)
     now = datetime.now(timezone.utc)
     races = data["MRData"]["RaceTable"]["Races"]
 

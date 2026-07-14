@@ -7,6 +7,7 @@ and mapping weather codes to human-readable conditions.
 
 from app.core.constants import WMO_CODES
 from app.core.http_client import http_client
+from app.core.config import OPEN_METEO_BASE_URL
 
 
 def get_track_weather(lat, lon):
@@ -22,7 +23,7 @@ def get_track_weather(lat, lon):
         Returns fallback values on failure.
     """
     weather_url = (
-        f"https://api.open-meteo.com/v1/forecast"
+        f"{OPEN_METEO_BASE_URL}/forecast"
         f"?latitude={lat}&longitude={lon}"
         f"&current=temperature_2m,weather_code&timezone=auto"
     )

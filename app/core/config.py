@@ -5,12 +5,22 @@ Contains all external API endpoints, CORS settings, and environment configuratio
 This file should only contain configuration values — no business logic.
 """
 
-# --- Jolpica Ergast API URLs ---
-F1_SCHEDULE_URL = "https://api.jolpi.ca/ergast/f1/2026.json"
-DRIVER_STANDINGS_URL = "https://api.jolpi.ca/ergast/f1/2026/driverstandings.json"
-CONSTRUCTOR_STANDINGS_URL = "https://api.jolpi.ca/ergast/f1/2026/constructorstandings.json"
-DRIVERS_URL = "https://api.jolpi.ca/ergast/f1/2026/drivers.json"
-CONSTRUCTORS_URL = "https://api.jolpi.ca/ergast/f1/2026/constructors.json"
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+IMAGE_BASE_URL = os.getenv("IMAGE_BASE_URL")
+SCHEDULE_URL = os.getenv("F1_SCHEDULE_URL")
+DRIVERS_URL = os.getenv("F1_DRIVERS_URL")
+CONSTRUCTORS_URL = os.getenv("F1_CONSTRUCTORS_URL")
+DRIVER_STANDINGS_URL = os.getenv("F1_DRIVER_STANDINGS_URL")
+CONSTRUCTOR_STANDINGS_URL = os.getenv("F1_CONSTRUCTOR_STANDINGS_URL")
+PRIMARY_RSS_URL = os.getenv("PRIMARY_RSS_URL")
+SECONDARY_RSS_URL = os.getenv("SECONDARY_RSS_URL")
+FALLBACK_RSS_URL = os.getenv("FALLBACK_RSS_URL")
+OPEN_METEO_BASE_URL = os.getenv("OPEN_METEO_BASE_URL")
+STATS_BASE_URL = os.getenv("STATS_BASE_URL")
 
 # --- CORS Configuration ---
 CORS_ORIGINS = ["*"]

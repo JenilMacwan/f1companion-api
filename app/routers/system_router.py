@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 router = APIRouter()
 
 # Resolve the favicon path relative to this file's location
-FAVICON_PATH = Path(__file__).resolve().parent.parent / "assets" / "favicon" / "f1_companion_icon.png"
+FAVICON_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "favicon" / "f1_companion_icon.png"
 
 
 @router.get("/")
