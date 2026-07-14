@@ -1,5 +1,6 @@
 fastapi
 uvicorn
 requests
+python-dotenv
 emoji-country-flag
 feedparser
