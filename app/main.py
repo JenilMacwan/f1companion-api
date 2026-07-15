@@ -27,7 +27,6 @@ from app.routers import (
     driver_router,
     constructor_router,
     standings_router,
-    stats_router,
     circuit_router,
     news_router,
 )
@@ -51,7 +50,6 @@ app.include_router(race_router.router)
 app.include_router(driver_router.router)
 app.include_router(constructor_router.router)
 app.include_router(standings_router.router)
-app.include_router(stats_router.router)
 app.include_router(circuit_router.router)
 app.include_router(news_router.router)
 

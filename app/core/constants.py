@@ -79,3 +79,15 @@ SESSION_KEYS = {
     "Sprint": "Sprint",
     "SprintQualifying": "Sprint Qualifying"
 }
+
+# --- Official 2026 Season Drivers ---
+# Only contracted race seat holders. Filters out reserve/test/substitute drivers
+# that Jolpica includes from practice or one-off race appearances.
+OFFICIAL_DRIVERS_2026 = {
+    "albon", "alonso", "antonelli", "bearman", "bortoleto",
+    "bottas", "colapinto", "gasly", "hadjar",
+    "hamilton", "hulkenberg", "lawson", "leclerc", "arvid_lindblad",
+    "norris", "ocon", "piastri", "perez", "russell",
+    "sainz", "stroll", "max_verstappen"
+}
+

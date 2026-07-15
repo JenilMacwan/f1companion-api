@@ -25,6 +25,9 @@ def get_driver_image(driver_id: str) -> str:
 def get_constructor_logo(constructor_id: str) -> str:
     return f"{IMAGE_BASE_URL}/constructors/{constructor_id}.webp"
 
+def get_constructor_car(constructor_id: str) -> str:
+    return f"{IMAGE_BASE_URL}/constructors_car_image/{constructor_id}_car.webp"
+
 """ STATS """
 def stats(path: str) -> str:
     return f"{STATS_BASE_URL}/{path}"

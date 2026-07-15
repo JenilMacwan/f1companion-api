@@ -21,18 +21,19 @@ def read_root():
         "welcome_message": "Welcome to the F1 Companion API",
         "description": "A high-performance middleware for Formula 1 data.",
         "endpoints": [
-            {"path": "/", "description": "API Index"},
-            {"path": "/schedule", "description": "Current season calendar"},
-            {"path": "/next_race", "description": "Live countdown and track weather"},
-            {"path": "/drivers", "description": "Current driver lineup"},
-            {"path": "/constructors", "description": "Current team lineup"},
-            {"path": "/driver_standings", "description": "WDC Live Standings"},
-            {"path": "/constructor_standings", "description": "WCC Live Standings"},
-            {"path": "/circuits", "description": "Information of all 2026 circuits"},
-            {"path": "/race_results/{race_id}/{year}", "description": "Results of a specific race"},
-            {"path": "/driver_stats", "description": "Deep career stats for drivers"},
-            {"path": "/constructor_stats", "description": "Team performance and history"},
-            {"path": "/news", "description": "Latest F1 news"}
+            {"path": "/", "description": "API Index — lists all available endpoints"},
+            {"path": "/schedule", "description": "Full season calendar with race dates and session times"},
+            {"path": "/next_race", "description": "Next upcoming race with live countdown, session info, and track weather"},
+            {"path": "/circuits", "description": "All circuit details with track layout images"},
+            {"path": "/drivers", "description": "Current season driver lineup (lightweight)"},
+            {"path": "/driver_profile", "description": "Enriched driver profiles with image, team, and full career statistics"},
+            {"path": "/constructors", "description": "Current season constructor/team lineup (lightweight)"},
+            {"path": "/constructor_profile", "description": "Enriched constructor profiles with logo, drivers, and full career statistics"},
+            {"path": "/driver_standings", "description": "Live World Drivers' Championship standings"},
+            {"path": "/constructor_standings", "description": "Live World Constructors' Championship standings"},
+            {"path": "/race_results/{round}/{year}", "description": "Detailed results for a specific race by round and year"},
+            {"path": "/news", "description": "Latest F1 news aggregated from multiple sources"},
+            {"path": "/health", "description": "API health check"}
         ],
         "status": "online"
     }

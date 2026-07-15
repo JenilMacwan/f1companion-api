@@ -1,13 +1,13 @@
 """
 Driver router.
 
-Endpoint: /drivers
+Endpoints: /drivers, /driver_profile
 """
 
 from fastapi import APIRouter, HTTPException
 import requests
 
-from app.services.driver_service import get_drivers
+from app.services.driver_service import get_drivers, get_driver_profiles
 
 router = APIRouter()
 
@@ -20,4 +20,15 @@ def drivers():
         raise HTTPException(
             status_code=500,
             detail=f"Error: {str(e)}"
+        )
+
+
+@router.get("/driver_profile")
+def driver_profile():
+    try:
+        return get_driver_profiles()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching driver profiles: {str(e)}"
         )

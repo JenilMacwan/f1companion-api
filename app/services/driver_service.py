@@ -1,16 +1,22 @@
 """
 Driver service.
 
-Responsible for fetching and processing driver information.
+Responsible for fetching driver information and building enriched driver profiles
+that combine identity, team, image, and career statistics.
 """
 
+from datetime import datetime, timezone
 from app.core.config import DRIVERS_URL
+from app.core.constants import OFFICIAL_DRIVERS_2026
 from app.core.http_client import http_client
+from app.data.championships import GLOBAL_WDC_MAP
+from app.data.driver_stats import DRIVER_BASE_STATS
+from app.utils.helpers import stats, get_driver_image
 
 
 def get_drivers():
     """
-    Fetch and clean the current season's driver lineup.
+    Fetch and clean the current season's driver lineup (lightweight).
 
     Returns:
         Dict with season, total driver count, and cleaned drivers list.
@@ -23,6 +29,8 @@ def get_drivers():
 
     clean_drivers = []
     for driver in drivers_raw:
+        if driver.get("driverId") not in OFFICIAL_DRIVERS_2026:
+            continue
         driver_entry = {
             "driverid": driver.get("driverId", "Unknown"),
             "firstname": driver.get("givenName", "Unknown"),
@@ -46,4 +54,154 @@ def get_drivers():
         "season": data["MRData"]["DriverTable"]["season"],
         "total_drivers": len(clean_drivers),
         "drivers": clean_drivers
+    }
+
+
+def get_driver_profiles():
+    """
+    Build enriched profiles for all drivers on the current grid.
+
+    Combines driver identity (name, number, code, nationality),
+    driver image, current team, and full career statistics
+    (baseline + current year dynamic data).
+
+    Returns:
+        Dict with season, total drivers, and enriched profiles list.
+
+    Raises:
+        Exception: On API or processing failure.
+    """
+    from app.services.stats_service import ensure_champs_fetched
+    ensure_champs_fetched()
+
+    current_year = str(datetime.now(timezone.utc).year)
+
+    # --- Fetch current drivers list ---
+    current_res = http_client.fetch_json(stats("current/drivers.json"))
+    current_drivers = current_res["MRData"]["DriverTable"]["Drivers"]
+
+    # --- Fetch current standings (for team + position + points) ---
+    current_standings_map = {}
+    try:
+        cs_res = http_client.fetch_json_safe(
+            stats("current/driverStandings.json")
+        )
+        if cs_res:
+            cs_data = cs_res["MRData"]["StandingsTable"]["StandingsLists"]
+            if cs_data:
+                for standing in cs_data[0]["DriverStandings"]:
+                    d_id = standing["Driver"]["driverId"]
+                    constructors = standing.get("Constructors", [])
+                    team_name = constructors[0].get("name", "N/A") if constructors else "N/A"
+                    current_standings_map[d_id] = {
+                        "team": team_name,
+                        "position": standing.get("position", "N/A"),
+                        "points": standing.get("points", "0")
+                    }
+    except Exception:
+        pass
+
+    # --- Fetch current year race results ---
+    current_year_races = []
+    try:
+        res = http_client.fetch_json_safe(
+            stats(f"{current_year}/results.json?limit=1000")
+        )
+        if res:
+            current_year_races = res["MRData"]["RaceTable"]["Races"]
+    except Exception:
+        pass
+
+    # --- Compute current year stats per driver ---
+    current_year_stats = {}
+    for race in current_year_races:
+        for result in race["Results"]:
+            d_id = result["Driver"]["driverId"]
+            if d_id not in current_year_stats:
+                current_year_stats[d_id] = {
+                    "races": 0, "wins": 0, "podiums": 0, "pole": 0, "points": 0.0
+                }
+
+            current_year_stats[d_id]["races"] += 1
+            current_year_stats[d_id]["points"] += float(result.get("points", 0.0))
+
+            pos = result.get("position")
+            if pos == "1":
+                current_year_stats[d_id]["wins"] += 1
+            if pos in ["1", "2", "3"]:
+                current_year_stats[d_id]["podiums"] += 1
+            if result.get("grid") == "1":
+                current_year_stats[d_id]["pole"] += 1
+
+    # --- Build enriched profiles ---
+    profiles = []
+    for driver in current_drivers:
+        d_id = driver["driverId"]
+
+        if d_id not in OFFICIAL_DRIVERS_2026:
+            continue
+
+        # Identity
+        first_name = driver.get("givenName", "Unknown")
+        last_name = driver.get("familyName", "Unknown")
+        number = driver.get("permanentNumber", "TBA") or "TBA"
+        code = driver.get("code", "---") or "---"
+        nationality = driver.get("nationality", "Unknown")
+
+        # Image
+        image_url = get_driver_image(d_id)
+
+        # Team from standings
+        standing_info = current_standings_map.get(d_id, {})
+        team = standing_info.get("team", "N/A")
+
+        # Career stats (baseline + current year)
+        base = DRIVER_BASE_STATS.get(d_id, {
+            "total_races": 0, "total_pole": 0, "total_wins": 0,
+            "total_podiums": 0, "career_points": 0.0, "total_seasons": 0
+        })
+        cy = current_year_stats.get(d_id, {
+            "races": 0, "wins": 0, "podiums": 0, "pole": 0, "points": 0.0
+        })
+
+        total_races = base["total_races"] + cy["races"]
+        total_wins = base["total_wins"] + cy["wins"]
+        total_podiums = base["total_podiums"] + cy["podiums"]
+        total_poles = base["total_pole"] + cy["pole"]
+        career_points = round(base["career_points"] + cy["points"], 1)
+        total_seasons = base["total_seasons"] + 1
+        wdc_count = GLOBAL_WDC_MAP.get(d_id, 0)
+
+        current_season = {
+            "year": current_year,
+            "position": standing_info.get("position", "N/A"),
+            "points": standing_info.get("points", "0")
+        }
+
+        profiles.append({
+            "driver_id": d_id,
+            "first_name": first_name,
+            "last_name": last_name,
+            "full_name": f"{first_name} {last_name}",
+            "number": number,
+            "code": code,
+            "nationality": nationality,
+            "image": image_url,
+            "team": team,
+            "career_stats": {
+                "world_championships": wdc_count,
+                "total_races": total_races,
+                "total_poles": total_poles,
+                "total_wins": total_wins,
+                "total_podiums": total_podiums,
+                "career_points": career_points,
+                "total_seasons": total_seasons,
+                "current_season": current_season
+            }
+        })
+
+    return {
+        "season": current_year,
+        "total_drivers": len(profiles),
+        "drivers": profiles
     }
