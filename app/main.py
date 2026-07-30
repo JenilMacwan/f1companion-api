@@ -29,6 +29,7 @@ from app.routers import (
     standings_router,
     circuit_router,
     news_router,
+    race_control_router,
 )
 
 # --- Create Application ---
@@ -52,6 +53,11 @@ app.include_router(constructor_router.router)
 app.include_router(standings_router.router)
 app.include_router(circuit_router.router)
 app.include_router(news_router.router)
+
+# Exclude race_control endpoint in Vercel production environment
+import os
+if os.getenv("VERCEL") != "1":
+    app.include_router(race_control_router.router)
 
 # --- Local Development ---
 if __name__ == "__main__":

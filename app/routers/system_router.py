@@ -6,42 +6,58 @@ Endpoints: /, /health, /favicon.ico
 
 from pathlib import Path
 from fastapi import APIRouter
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 router = APIRouter()
 
 # Resolve the favicon path relative to this file's location
 FAVICON_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "favicon" / "f1_companion_icon.png"
+INDEX_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "index.html"
 
 
-@router.get("/")
+import os
+
+@router.get("/", response_class=HTMLResponse)
 def read_root():
-    return {
-        "title": "F1 Companion API 🏎️",
-        "welcome_message": "Welcome to the F1 Companion API",
-        "description": "A high-performance middleware for Formula 1 data.",
-        "endpoints": [
-            {"path": "/", "description": "API Index — lists all available endpoints"},
-            {"path": "/schedule", "description": "Full season calendar with race dates and session times"},
-            {"path": "/next_race", "description": "Next upcoming race with live countdown, session info, and track weather"},
-            {"path": "/circuits", "description": "All circuit details with track layout images"},
-            {"path": "/drivers", "description": "Current season driver lineup (lightweight)"},
-            {"path": "/driver_profile", "description": "Enriched driver profiles with image, team, and full career statistics"},
-            {"path": "/constructors", "description": "Current season constructor/team lineup (lightweight)"},
-            {"path": "/constructor_profile", "description": "Enriched constructor profiles with logo, drivers, and full career statistics"},
-            {"path": "/driver_standings", "description": "Live World Drivers' Championship standings"},
-            {"path": "/constructor_standings", "description": "Live World Constructors' Championship standings"},
-            {"path": "/race_results/{round}/{year}", "description": "Detailed results for a specific race by round and year"},
-            {"path": "/news", "description": "Latest F1 news aggregated from multiple sources"},
-            {"path": "/health", "description": "API health check"}
-        ],
-        "status": "online"
-    }
+    with open(INDEX_HTML_PATH, "r", encoding="utf-8") as f:
+        content = f.read()
+        
+        # If in Vercel production, hide the race_control card
+        if os.getenv("VERCEL") == "1":
+            content = content.replace("</style>", "    a[href='/race_control'] { display: none !important; }\n    </style>")
+            
+        return HTMLResponse(content=content)
 
+
+import time
+from app.core.config import APP_VERSION, SCHEDULE_URL
+from app.core.http_client import http_client
+
+START_TIME = time.time()
 
 @router.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    uptime_seconds = int(time.time() - START_TIME)
+    
+    # Check if the external Ergast API is reachable
+    try:
+        # Use a short timeout to prevent the health check from hanging
+        response = http_client.session.get(SCHEDULE_URL, timeout=2.0)
+        response.raise_for_status()
+        ergast_status = "online"
+    except Exception as e:
+        ergast_status = f"offline ({type(e).__name__})"
+        
+    overall_status = "healthy" if ergast_status == "online" else "degraded"
+    
+    return {
+        "status": overall_status,
+        "version": APP_VERSION,
+        "uptime_seconds": uptime_seconds,
+        "dependencies": {
+            "jolpica_ergast_api": ergast_status
+        }
+    }
 
 
 @router.get("/favicon.ico", include_in_schema=False)
