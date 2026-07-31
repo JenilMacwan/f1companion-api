@@ -12,6 +12,7 @@ from app.core.http_client import http_client
 from app.services.weather_service import get_track_weather
 from app.utils.flags import get_clean_flag
 from app.utils.datetime_utils import parse_race_datetime
+from app.utils.helpers import get_driver_image
 
 
 def get_next_race():
@@ -141,6 +142,7 @@ def get_race_results(round_num, year):
             "position": result["position"],
             "positionText": result["positionText"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+            "driver_image": get_driver_image(result["Driver"]["driverId"]),
             "constructor": result["Constructor"]["name"],
             "points": result["points"],
             "grid": result["grid"],
