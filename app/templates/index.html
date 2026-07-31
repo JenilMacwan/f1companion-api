@@ -1,21 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 Companion API | The Ultimate Formula 1 Data API</title>
     <meta name="google-site-verification" content="ey1c9mikmR_yLl1XKl9EK1actZbBg14V0zAm5uONmMU" />
-    <meta name="description" content="F1 Companion API is a high-performance middleware and REST API for real-time Formula 1 data. Get live F1 race results, schedules, driver standings, circuits, and news.">
-    <meta name="keywords" content="F1 API, Formula 1 API, F1 Companion API, F1 race results API, F1 data, live F1 stats, driver standings, constructor standings">
+    <meta name="description"
+        content="F1 Companion API is a high-performance middleware and REST API for real-time Formula 1 data. Get live F1 race results, schedules, driver standings, circuits, and news.">
+    <meta name="keywords"
+        content="F1 API, Formula 1 API, F1 Companion API, F1 race results API, F1 data, live F1 stats, driver standings, constructor standings">
     <meta name="author" content="F1 Companion">
     <meta name="robots" content="index, follow">
-    
+
+    <link rel="canonical" href="https://f1companion-api.vercel.app/">
+
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="F1 Companion API | The Ultimate Formula 1 Data API">
-    <meta property="og:description" content="A high-performance middleware and REST API for real-time Formula 1 data, schedules, and standings.">
-    
+    <meta property="og:description"
+        content="A high-performance middleware and REST API for real-time Formula 1 data, schedules, and standings.">
+    <meta property="og:site_name" content="F1 Companion API">
+    <meta property="og:url" content="https://f1companion-api.vercel.app/">
+
     <!-- Structured Data / JSON-LD -->
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "F1 Companion API",
+      "alternateName": "F1 Companion",
+      "url": "https://f1companion-api.vercel.app/"
+    }
+    </script>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -31,7 +50,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --f1-red: #E10600;
@@ -56,7 +77,7 @@
             color: var(--text-main);
             line-height: 1.6;
             min-height: 100vh;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 15% 50%, rgba(225, 6, 0, 0.08), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(225, 6, 0, 0.05), transparent 25%);
             overflow-x: hidden;
@@ -182,7 +203,7 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .method-badge {
             background: rgba(255, 255, 255, 0.1);
             color: #FFF;
@@ -256,24 +277,51 @@
 
         /* Animations */
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+            }
         }
 
         @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         /* Background grid */
@@ -283,9 +331,9 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-image: 
-                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
             z-index: -1;
             pointer-events: none;
@@ -294,11 +342,17 @@
         }
 
         @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            .endpoints-grid { grid-template-columns: 1fr; }
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="bg-grid"></div>
     <div class="container">
@@ -308,7 +362,8 @@
                 API Online
             </div>
             <h1>F1 Companion <span>API</span></h1>
-            <p class="subtitle">A high-performance middleware for Formula 1 data. Explore real-time stats, schedules, and historical records.</p>
+            <p class="subtitle">A high-performance middleware for Formula 1 data. Explore real-time stats, schedules,
+                and historical records.</p>
         </header>
 
         <main>
@@ -318,7 +373,7 @@
                     <div class="endpoint-path"><span class="method-badge">GET</span> /</div>
                     <div class="endpoint-desc">API Index — lists all available endpoints</div>
                 </a>
-                
+
                 <a href="/schedule" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /schedule</div>
                     <div class="endpoint-desc">Full season calendar with race dates and session times</div>
@@ -326,7 +381,8 @@
 
                 <a href="/next_race" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /next_race</div>
-                    <div class="endpoint-desc">Next upcoming race with live countdown, session info, and track weather</div>
+                    <div class="endpoint-desc">Next upcoming race with live countdown, session info, and track weather
+                    </div>
                 </a>
 
                 <a href="/circuits" class="endpoint-card">
@@ -341,7 +397,8 @@
 
                 <a href="/driver_profile" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /driver_profile</div>
-                    <div class="endpoint-desc">Enriched driver profiles with image, team, and full career statistics</div>
+                    <div class="endpoint-desc">Enriched driver profiles with image, team, and full career statistics
+                    </div>
                 </a>
 
                 <a href="/constructors" class="endpoint-card">
@@ -351,7 +408,8 @@
 
                 <a href="/constructor_profile" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /constructor_profile</div>
-                    <div class="endpoint-desc">Enriched constructor profiles with logo, drivers, and full career statistics</div>
+                    <div class="endpoint-desc">Enriched constructor profiles with logo, drivers, and full career
+                        statistics</div>
                 </a>
 
                 <a href="/driver_standings" class="endpoint-card">
@@ -367,16 +425,20 @@
                 <div class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /race_results/{round}/{year}</div>
                     <div class="endpoint-desc">Detailed results for a specific race by round and year</div>
-                    <form class="param-form" onsubmit="event.preventDefault(); window.location.href='/race_results/' + this.round.value + '/' + this.year.value;">
-                        <input type="number" name="round" placeholder="Round (e.g. 1)" required class="param-input" min="1">
-                        <input type="number" name="year" placeholder="Year (e.g. 2024)" required class="param-input" min="1950">
+                    <form class="param-form"
+                        onsubmit="event.preventDefault(); window.location.href='/race_results/' + this.round.value + '/' + this.year.value;">
+                        <input type="number" name="round" placeholder="Round (e.g. 1)" required class="param-input"
+                            min="1">
+                        <input type="number" name="year" placeholder="Year (e.g. 2024)" required class="param-input"
+                            min="1950">
                         <button type="submit" class="param-btn">Go</button>
                     </form>
                 </div>
 
                 <a href="/race_control" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /race_control</div>
-                    <div class="endpoint-desc">Live and historical race control messages (flags, safety cars, investigations)</div>
+                    <div class="endpoint-desc">Live and historical race control messages (flags, safety cars,
+                        investigations)</div>
                 </a>
 
                 <a href="/news" class="endpoint-card">
@@ -395,7 +457,7 @@
             <p>🏎️ F1 Companion API &copy; 2024. Not affiliated with Formula One Administration Limited.</p>
         </footer>
     </div>
-    
+
     <script>
         // Optional interactive effects
         document.querySelectorAll('.endpoint-card').forEach(card => {
@@ -403,7 +465,7 @@
                 const rect = card.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
-                
+
                 card.style.background = `
                     radial-gradient(
                         circle at ${x}px ${y}px,
@@ -412,11 +474,12 @@
                     )
                 `;
             });
-            
+
             card.addEventListener('mouseleave', () => {
                 card.style.background = 'rgba(25, 25, 25, 0.6)';
             });
         });
     </script>
 </body>
+
 </html>
