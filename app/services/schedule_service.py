@@ -5,11 +5,20 @@ Responsible for fetching the season schedule, cleaning data,
 and formatting the schedule response.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from app.core.config import SCHEDULE_URL
 from app.core.http_client import http_client
 from app.utils.datetime_utils import parse_race_datetime
 from app.utils.flags import get_clean_flag
+
+# Buffer added on top of race start time before a round is considered
+# "completed". A race takes ~2 hours to run, and upstream result feeds
+# (Jolpica/Ergast) take some additional time to ingest and publish
+# results after the chequered flag. Without this buffer, is_completed
+# flips to True the moment the race starts — well before results
+# exist — causing downstream consumers (points progression, career
+# stats) to silently treat "no data yet" as "scored 0 points".
+RESULTS_PUBLISH_BUFFER = timedelta(hours=4)
 
 
 def get_schedule():
@@ -28,6 +37,9 @@ def get_schedule():
     clean_schedule = []
     for race in races_raw:
         country = race["Circuit"]["Location"]["country"]
+        race_datetime = parse_race_datetime(
+            race["date"], race.get("time", "00:00:00Z")
+        )
         race_entry = {
             "round": race["round"],
             "flag_emoji": get_clean_flag(country),
@@ -38,9 +50,10 @@ def get_schedule():
             "circuitcountry": country,
             "GrandPrix": race["date"],
             "time": race.get("time", "TBA"),
-            "is_completed": parse_race_datetime(
-                race["date"], race.get("time", "00:00:00Z")
-            ) < datetime.now(timezone.utc)
+            "is_completed": (
+                race_datetime + RESULTS_PUBLISH_BUFFER
+            ) < datetime.now(timezone.utc),
+            "is_sprint_weekend": "Sprint" in race or "SprintQualifying" in race
         }
 
         sessions = [

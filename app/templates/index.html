@@ -225,6 +225,15 @@
             font-weight: 300;
         }
 
+        .endpoint-info {
+            color: #E10600;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.8rem;
+            margin-bottom: 0;
+            display: inline-flex;
+        }
+
         /* Parameter Form */
         .param-form {
             margin-top: 1rem;
@@ -435,10 +444,53 @@
                     </form>
                 </div>
 
+                <div class="endpoint-card">
+                    <div class="endpoint-path"><span class="method-badge">GET</span> /qualifying_results/{round}/{year}
+                    </div>
+                    <div class="endpoint-desc">Qualifying results for a specific race by round and year</div>
+                    <form class="param-form"
+                        onsubmit="event.preventDefault(); window.location.href='/qualifying_results/' + this.round.value + '/' + this.year.value;">
+                        <input type="number" name="round" placeholder="Round (e.g. 1)" required class="param-input"
+                            min="1">
+                        <input type="number" name="year" placeholder="Year (e.g. 2024)" required class="param-input"
+                            min="1950">
+                        <button type="submit" class="param-btn">Go</button>
+                    </form>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-path"><span class="method-badge">GET</span> /sprint_results/{round}/{year}
+                    </div>
+                    <div class="endpoint-desc">Sprint race results for a specific race by round and year</div>
+                    <form class="param-form"
+                        onsubmit="event.preventDefault(); window.location.href='/sprint_results/' + this.round.value + '/' + this.year.value;">
+                        <input type="number" name="round" placeholder="Round (e.g. 1)" required class="param-input"
+                            min="1">
+                        <input type="number" name="year" placeholder="Year (e.g. 2024)" required class="param-input"
+                            min="1950">
+                        <button type="submit" class="param-btn">Go</button>
+                    </form>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-path"><span class="method-badge">GET</span>
+                        /sprint_qualifying_results/{round}/{year}</div>
+                    <div class="endpoint-desc">Sprint Qualifying results for a specific race by round and year</div>
+                    <form class="param-form"
+                        onsubmit="event.preventDefault(); window.location.href='/sprint_qualifying_results/' + this.round.value + '/' + this.year.value;">
+                        <input type="number" name="round" placeholder="Round (e.g. 1)" required class="param-input"
+                            min="1">
+                        <input type="number" name="year" placeholder="Year (e.g. 2024)" required class="param-input"
+                            min="1950">
+                        <button type="submit" class="param-btn">Go</button>
+                    </form>
+                </div>
+
                 <a href="/race_control" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /race_control</div>
                     <div class="endpoint-desc">Live and historical race control messages (flags, safety cars,
-                        investigations)</div>
+                        investigations) </div>
+                    <div class="endpoint-info">Still under development</div>
                 </a>
 
                 <a href="/news" class="endpoint-card">

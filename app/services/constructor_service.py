@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from app.core.config import CONSTRUCTORS_URL
 from app.core.http_client import http_client
 from app.data.constructor_stats import CONSTRUCTOR_BASE_STATS
+from app.services.schedule_service import get_schedule
+from app.services.round_results_service import get_round_results
 from app.utils.helpers import stats, get_constructor_logo
 from app.utils.helpers import get_constructor_car
 
@@ -35,8 +37,49 @@ def get_constructors():
     }
 
 
+def _parse_constructor_round(current_year, rnd):
+    """
+    Parse per-constructor race + sprint points/positions for one round
+    from the shared, cached round-results fetch (see round_results_service).
+    A constructor can have two drivers scoring in the same race, so
+    points and positions are aggregated per constructor.
+
+    Returns:
+        Tuple of (race_points, race_positions, sprint_points, race_data_available):
+        - race_points: {constructor_id: points_scored_in_race}
+        - race_positions: {constructor_id: [finishing_positions]}
+        - sprint_points: {constructor_id: points_scored_in_sprint}
+        - race_data_available: True only if results are published for this round
+    """
+    round_data = get_round_results(current_year, rnd)
+
+    race_points = {}
+    race_positions = {}
+    for result in round_data["race_results"]:
+        c_id = result["Constructor"]["constructorId"]
+        pts = float(result.get("points", 0.0))
+        race_points[c_id] = race_points.get(c_id, 0.0) + pts
+        race_positions.setdefault(c_id, []).append(result.get("position"))
+
+    sprint_points = {}
+    for result in round_data["sprint_results"]:
+        c_id = result["Constructor"]["constructorId"]
+        pts = float(result.get("points", 0.0))
+        sprint_points[c_id] = sprint_points.get(c_id, 0.0) + pts
+
+    return race_points, race_positions, sprint_points, round_data["race_data_available"]
+
+
 def get_constructor_profiles():
-    
+    """
+    Build enriched profiles for all constructors on the current grid.
+
+    Points progression is built from the shared, cached per-round
+    results (round_results_service), and includes both the points
+    scored that round and the running cumulative total for the
+    season. Rounds still pending results upstream are skipped
+    entirely rather than shown as a false 0.
+    """
     from app.services.stats_service import ensure_champs_fetched
     ensure_champs_fetched()
 
@@ -85,35 +128,43 @@ def get_constructor_profiles():
     except Exception:
         pass
 
-    # --- Fetch current year race results ---
-    current_year_races = []
-    try:
-        res = http_client.fetch_json_safe(
-            stats(f"{current_year}/results.json?limit=1000")
-        )
-        if res:
-            current_year_races = res["MRData"]["RaceTable"]["Races"]
-    except Exception:
-        pass
+    # --- Fetch schedule to determine completed rounds ---
+    schedule_data = get_schedule()
+    completed_rounds = [r for r in schedule_data["schedule"] if r.get("is_completed")]
 
-    # --- Compute current year stats per constructor ---
+    # --- Parse per-round race + sprint results (shared cache) ---
+    race_points_map_c = {}     # {round: {constructor_id: points}}
+    race_positions_map_c = {}  # {round: {constructor_id: [positions]}}
+    sprint_points_map_c = {}   # {round: {constructor_id: points}}
+    rounds_with_data = []      # completed rounds that actually have published results
+
+    for r_entry in completed_rounds:
+        rnd = str(r_entry["round"])
+        race_points, race_positions, sprint_points, race_data_available = _parse_constructor_round(
+            current_year, rnd
+        )
+        race_points_map_c[rnd] = race_points
+        race_positions_map_c[rnd] = race_positions
+        sprint_points_map_c[rnd] = sprint_points
+        if race_data_available:
+            rounds_with_data.append(r_entry)
+
+    # --- Compute current year stats per constructor from per-round data ---
+    # Only rounds with published results are counted — a round pending
+    # results upstream must not silently count as 0 points scored.
     current_year_stats = {}
-    for race in current_year_races:
-        participating = set()
-        for result in race["Results"]:
-            c_id = result["Constructor"]["constructorId"]
-            participating.add(c_id)
+    for r_entry in rounds_with_data:
+        rnd = str(r_entry["round"])
+        for c_id in race_points_map_c.get(rnd, {}).keys():
             if c_id not in current_year_stats:
                 current_year_stats[c_id] = {"wins": 0, "podiums": 0, "entries": 0}
 
-            pos = result.get("position")
-            if pos == "1":
-                current_year_stats[c_id]["wins"] += 1
-            if pos in ["1", "2", "3"]:
-                current_year_stats[c_id]["podiums"] += 1
-
-        for c_id in participating:
             current_year_stats[c_id]["entries"] += 1
+            positions = race_positions_map_c.get(rnd, {}).get(c_id, [])
+            if "1" in positions:
+                current_year_stats[c_id]["wins"] += 1
+            if any(p in ["1", "2", "3"] for p in positions):
+                current_year_stats[c_id]["podiums"] += 1
 
     # --- Build enriched profiles ---
     profiles = []
@@ -128,7 +179,7 @@ def get_constructor_profiles():
         logo_url = get_constructor_logo(c_id)
 
         # Car
-        car_image_url = get_constructor_car(c_id) 
+        car_image_url = get_constructor_car(c_id)
 
         # Drivers
         drivers = constructor_drivers.get(c_id, [])
@@ -153,15 +204,36 @@ def get_constructor_profiles():
         current_season = {
             "year": current_year,
             "position": standing_info.get("position", "N/A"),
-            "points": standing_info.get("points", "0")
+            "points": standing_info.get("points", "0"),
+            "points_progression": []
         }
+
+        # Construct complete points progression using schedule,
+        # tracking both the points scored per round and the
+        # cumulative running total for the season — matching the
+        # driver profile pattern of including every completed round.
+        cumulative_points = 0.0
+        for r_entry in completed_rounds:
+            rnd = str(r_entry["round"])
+            r_name = r_entry["racename"]
+            r_pts = race_points_map_c.get(rnd, {}).get(c_id, 0.0)
+            s_pts = sprint_points_map_c.get(rnd, {}).get(c_id, 0.0)
+            round_points = r_pts + s_pts
+            cumulative_points += round_points
+
+            current_season["points_progression"].append({
+                "round": rnd,
+                "race_name": r_name,
+                "points": round_points,
+                "cumulative_points": round(cumulative_points, 1)
+            })
 
         profiles.append({
             "constructor_id": c_id,
             "name": name,
             "nationality": nationality,
             "logo": logo_url,
-            "car": car_image_url,   
+            "car": car_image_url,
             "drivers": drivers if drivers else "N/A",
             "career_stats": {
                 "constructor_championships": base["wcc"],

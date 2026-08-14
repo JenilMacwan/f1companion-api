@@ -157,3 +157,124 @@ def get_race_results(round_num, year):
         "race_name": race["raceName"],
         "results": clean_results
     }
+
+
+def get_qualifying_results(round_num, year):
+    """
+    Fetch qualifying results for a specific race by round and year.
+    """
+    results_url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_num}/qualifying.json"
+    data = http_client.fetch_json(results_url)
+
+    races_raw = data["MRData"]["RaceTable"]["Races"]
+
+    if not races_raw:
+        return {
+            "season": data["MRData"]["RaceTable"]["season"],
+            "status": "QUALIFYING RESULT NOT YET AVAILABLE",
+            "round": round_num,
+        }
+
+    race = races_raw[0]
+    results_list = race.get("QualifyingResults", [])
+
+    clean_results = []
+    for result in results_list:
+        clean_results.append({
+            "position": result["position"],
+            "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+            "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "constructor": result["Constructor"]["name"],
+            "q1": result.get("Q1", "N/A"),
+            "q2": result.get("Q2", "N/A"),
+            "q3": result.get("Q3", "N/A")
+        })
+
+    return {
+        "season": data["MRData"]["RaceTable"]["season"],
+        "round": race["round"],
+        "race_name": race["raceName"],
+        "results": clean_results
+    }
+
+
+def get_sprint_results(round_num, year):
+    """
+    Fetch sprint results for a specific race by round and year.
+    """
+    results_url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_num}/sprint.json"
+    data = http_client.fetch_json(results_url)
+
+    races_raw = data["MRData"]["RaceTable"]["Races"]
+
+    if not races_raw:
+        return {
+            "season": data["MRData"]["RaceTable"]["season"],
+            "status": "SPRINT RESULT NOT YET AVAILABLE",
+            "round": round_num,
+        }
+
+    race = races_raw[0]
+    results_list = race.get("SprintResults", [])
+
+    clean_results = []
+    for result in results_list:
+        clean_results.append({
+            "position": result["position"],
+            "positionText": result["positionText"],
+            "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+            "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "constructor": result["Constructor"]["name"],
+            "points": result.get("points", "0"),
+            "grid": result.get("grid", "N/A"),
+            "status": result["status"],
+            "time": result.get("Time", {}).get("time", "N/A"),
+            "fastest_lap_time": result.get("FastestLap", {}).get("Time", {}).get("time", "N/A")
+        })
+
+    return {
+        "season": data["MRData"]["RaceTable"]["season"],
+        "round": race["round"],
+        "race_name": race["raceName"],
+        "results": clean_results
+    }
+
+
+def get_sprint_qualifying_results(round_num, year):
+    """
+    Derive sprint qualifying results by using the sprint grid from a specific race.
+    """
+    results_url = f"https://api.jolpi.ca/ergast/f1/{year}/{round_num}/sprint.json"
+    data = http_client.fetch_json(results_url)
+
+    races_raw = data["MRData"]["RaceTable"]["Races"]
+
+    if not races_raw:
+        return {
+            "season": data["MRData"]["RaceTable"]["season"],
+            "status": "SPRINT QUALIFYING RESULT NOT YET AVAILABLE",
+            "round": round_num,
+        }
+
+    race = races_raw[0]
+    results_list = race.get("SprintResults", [])
+    
+    # Filter and sort by grid position to reconstruct sprint qualifying
+    valid_results = [r for r in results_list if r.get("grid") and r["grid"] != "0"]
+    valid_results.sort(key=lambda x: int(x["grid"]))
+
+    clean_results = []
+    for result in valid_results:
+        clean_results.append({
+            "position": result["grid"],
+            "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+            "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "constructor": result["Constructor"]["name"]
+        })
+
+    return {
+        "season": data["MRData"]["RaceTable"]["season"],
+        "round": race["round"],
+        "race_name": race["raceName"],
+        "results": clean_results
+    }

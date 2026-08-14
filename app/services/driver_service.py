@@ -11,6 +11,8 @@ from app.core.constants import OFFICIAL_DRIVERS_2026
 from app.core.http_client import http_client
 from app.data.championships import GLOBAL_WDC_MAP
 from app.data.driver_stats import DRIVER_BASE_STATS
+from app.services.schedule_service import get_schedule
+from app.services.round_results_service import get_round_results
 from app.utils.helpers import stats, get_driver_image
 
 
@@ -57,6 +59,38 @@ def get_drivers():
     }
 
 
+def _parse_driver_round(current_year, rnd):
+    """
+    Parse per-driver race + sprint points/meta for one round from the
+    shared, cached round-results fetch (see round_results_service).
+
+    Returns:
+        Tuple of (race_points, race_meta, sprint_points, race_data_available):
+        - race_points: {driver_id: points_scored_in_race}
+        - race_meta: {driver_id: {"position": ..., "grid": ...}}
+        - sprint_points: {driver_id: points_scored_in_sprint}
+        - race_data_available: True only if results are published for this round
+    """
+    round_data = get_round_results(current_year, rnd)
+
+    race_points = {}
+    race_meta = {}
+    for result in round_data["race_results"]:
+        d_id = result["Driver"]["driverId"]
+        race_points[d_id] = float(result.get("points", 0.0))
+        race_meta[d_id] = {
+            "position": result.get("position"),
+            "grid": result.get("grid")
+        }
+
+    sprint_points = {}
+    for result in round_data["sprint_results"]:
+        d_id = result["Driver"]["driverId"]
+        sprint_points[d_id] = float(result.get("points", 0.0))
+
+    return race_points, race_meta, sprint_points, round_data["race_data_available"]
+
+
 def get_driver_profiles():
     """
     Build enriched profiles for all drivers on the current grid.
@@ -64,6 +98,12 @@ def get_driver_profiles():
     Combines driver identity (name, number, code, nationality),
     driver image, current team, and full career statistics
     (baseline + current year dynamic data).
+
+    Points progression is built from the shared, cached per-round
+    results (round_results_service), and includes both the points
+    scored that round and the running cumulative total for the
+    season. Rounds still pending results upstream are skipped
+    entirely rather than shown as a false 0.
 
     Returns:
         Dict with season, total drivers, and enriched profiles list.
@@ -101,36 +141,49 @@ def get_driver_profiles():
     except Exception:
         pass
 
-    # --- Fetch current year race results ---
-    current_year_races = []
-    try:
-        res = http_client.fetch_json_safe(
-            stats(f"{current_year}/results.json?limit=1000")
-        )
-        if res:
-            current_year_races = res["MRData"]["RaceTable"]["Races"]
-    except Exception:
-        pass
+    # --- Fetch schedule to determine completed rounds ---
+    schedule_data = get_schedule()
+    completed_rounds = [r for r in schedule_data["schedule"] if r.get("is_completed")]
 
-    # --- Compute current year stats per driver ---
+    # --- Parse per-round race + sprint results (shared cache) ---
+    race_points_map = {}      # {round: {driver_id: points}}
+    race_meta_map = {}        # {round: {driver_id: {"position":..., "grid":...}}}
+    sprint_points_map = {}    # {round: {driver_id: points}}
+    rounds_with_data = []     # completed rounds that actually have published results
+
+    for r_entry in completed_rounds:
+        rnd = str(r_entry["round"])
+        race_points, race_meta, sprint_points, race_data_available = _parse_driver_round(
+            current_year, rnd
+        )
+        race_points_map[rnd] = race_points
+        race_meta_map[rnd] = race_meta
+        sprint_points_map[rnd] = sprint_points
+        if race_data_available:
+            rounds_with_data.append(r_entry)
+
+    # --- Compute current year stats per driver from per-round data ---
+    # Only rounds with published results are counted — a round pending
+    # results upstream must not silently count as 0 points scored.
     current_year_stats = {}
-    for race in current_year_races:
-        for result in race["Results"]:
-            d_id = result["Driver"]["driverId"]
+    for r_entry in rounds_with_data:
+        rnd = str(r_entry["round"])
+        for d_id, race_pts in race_points_map.get(rnd, {}).items():
             if d_id not in current_year_stats:
                 current_year_stats[d_id] = {
                     "races": 0, "wins": 0, "podiums": 0, "pole": 0, "points": 0.0
                 }
+            meta = race_meta_map.get(rnd, {}).get(d_id, {})
+            sprint_pts = sprint_points_map.get(rnd, {}).get(d_id, 0.0)
 
             current_year_stats[d_id]["races"] += 1
-            current_year_stats[d_id]["points"] += float(result.get("points", 0.0))
+            current_year_stats[d_id]["points"] += race_pts + sprint_pts
 
-            pos = result.get("position")
-            if pos == "1":
+            if meta.get("position") == "1":
                 current_year_stats[d_id]["wins"] += 1
-            if pos in ["1", "2", "3"]:
+            if meta.get("position") in ["1", "2", "3"]:
                 current_year_stats[d_id]["podiums"] += 1
-            if result.get("grid") == "1":
+            if meta.get("grid") == "1":
                 current_year_stats[d_id]["pole"] += 1
 
     # --- Build enriched profiles ---
@@ -175,8 +228,30 @@ def get_driver_profiles():
         current_season = {
             "year": current_year,
             "position": standing_info.get("position", "N/A"),
-            "points": standing_info.get("points", "0")
+            "points": standing_info.get("points", "0"),
+            "points_progression": []
         }
+
+        # Construct complete points progression using schedule,
+        # tracking both the points scored per round and the
+        # cumulative running total for the season. Rounds pending
+        # results upstream are skipped entirely rather than shown
+        # as a false 0 — they'll appear once results are published.
+        cumulative_points = 0.0
+        for r_entry in rounds_with_data:
+            rnd = str(r_entry["round"])
+            r_name = r_entry["racename"]
+            r_pts = race_points_map.get(rnd, {}).get(d_id, 0.0)
+            s_pts = sprint_points_map.get(rnd, {}).get(d_id, 0.0)
+            round_points = r_pts + s_pts
+            cumulative_points += round_points
+
+            current_season["points_progression"].append({
+                "round": rnd,
+                "race_name": r_name,
+                "points": round_points,
+                "cumulative_points": round(cumulative_points, 1)
+            })
 
         profiles.append({
             "driver_id": d_id,
