@@ -229,6 +229,8 @@ def get_driver_profiles():
             "year": current_year,
             "position": standing_info.get("position", "N/A"),
             "points": standing_info.get("points", "0"),
+            "wins": cy["wins"],
+            "podiums": cy["podiums"],
             "points_progression": []
         }
 

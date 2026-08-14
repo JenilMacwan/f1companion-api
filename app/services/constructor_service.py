@@ -205,6 +205,7 @@ def get_constructor_profiles():
             "year": current_year,
             "position": standing_info.get("position", "N/A"),
             "points": standing_info.get("points", "0"),
+            "podiums": cy["podiums"],
             "points_progression": []
         }
 
