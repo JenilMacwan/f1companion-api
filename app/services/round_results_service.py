@@ -88,9 +88,33 @@ def _fetch_season_bulk(current_year):
             logger.warning(f"Failed to fetch sprint results page offset={offset} for {current_year}")
             break
 
+    # --- Qualifying results (paginated) ---
+    qualifying_results_by_round = {}
+    offset = 0
+    while True:
+        try:
+            url = stats(f"{current_year}/qualifying.json?limit={PAGE_SIZE}&offset={offset}")
+            res = http_client.fetch_json_safe(url)
+            if not res:
+                break
+            total = int(res["MRData"].get("total", "0"))
+            races = res["MRData"]["RaceTable"]["Races"]
+            for race in races:
+                rnd = str(race["round"])
+                existing = qualifying_results_by_round.get(rnd, [])
+                existing.extend(race.get("QualifyingResults", []))
+                qualifying_results_by_round[rnd] = existing
+            offset += PAGE_SIZE
+            if offset >= total:
+                break
+        except Exception:
+            logger.warning(f"Failed to fetch qualifying results page offset={offset} for {current_year}")
+            break
+
     return {
         "race_results_by_round": race_results_by_round,
         "sprint_results_by_round": sprint_results_by_round,
+        "qualifying_results_by_round": qualifying_results_by_round,
     }
 
 
@@ -139,10 +163,12 @@ def get_round_results(current_year, rnd):
 
     race_results = season_data["race_results_by_round"].get(rnd)
     sprint_results = season_data["sprint_results_by_round"].get(rnd, [])
+    qualifying_results = season_data["qualifying_results_by_round"].get(rnd, [])
 
     return {
         "race_results": race_results or [],
         "sprint_results": sprint_results,
+        "qualifying_results": qualifying_results,
         "race_data_available": race_results is not None
     }
 

@@ -30,6 +30,7 @@ from app.routers import (
     circuit_router,
     news_router,
     race_control_router,
+    teammate_h2h_router,
 )
 
 # --- Create Application ---
@@ -53,6 +54,7 @@ app.include_router(constructor_router.router)
 app.include_router(standings_router.router)
 app.include_router(circuit_router.router)
 app.include_router(news_router.router)
+app.include_router(teammate_h2h_router.router)
 
 # Exclude race_control endpoint in Vercel production environment
 import os

@@ -13,7 +13,9 @@ Built to power the **F1 Companion** Flutter app.
 - 🧑‍✈️ **Drivers & Constructors** — Current 2026 season lineup
 - 🏆 **Live Standings** — WDC (Driver) and WCC (Constructor) championship standings
 - 🏟️ **Circuits** — Info on all 2026 circuits including track layout images
-- 📊 **Race Results** — Results for any race by round and year
+- 📊 **Race Results** — Results for any race by round and year (incl. qualifying and sprints)
+- 🤝 **Teammate Head-to-Head** — Comprehensive stats comparing teammates across all sessions
+- 🚩 **Race Control** — Live and historical race control messages (flags, safety cars, etc.)
 - 📈 **Deep Driver Stats** — Career wins, podiums, poles, points, championships, and full race history
 - 🔧 **Constructor Stats** — All-time win/podium rates for any team
 - 📰 **F1 News** — Latest headlines sourced from Sky Sports F1 RSS feed
@@ -78,8 +80,13 @@ The server starts at `http://127.0.0.1:5000`. Visit the root endpoint to see all
 | `GET` | `/constructors` | All 2026 constructors (teams) |
 | `GET` | `/driver_standings` | Live WDC standings |
 | `GET` | `/constructor_standings` | Live WCC standings |
+| `GET` | `/teammate_h2h` | Comprehensive head-to-head stats for teammates |
 | `GET` | `/circuits` | All 2026 circuit details |
-| `GET` | `/race_results/{round}/{year}` | Results for a specific race |
+| `GET` | `/race_results/{round}/{year}` | Race results for a specific round |
+| `GET` | `/qualifying_results/{round}/{year}` | Qualifying results for a specific round |
+| `GET` | `/sprint_results/{round}/{year}` | Sprint results for a specific round |
+| `GET` | `/sprint_qualifying_results/{round}/{year}` | Sprint qualifying results for a specific round |
+| `GET` | `/race_control` | Live and historical race control messages |
 | `GET` | `/driver_stats` | Full career stats for all drivers |
 | `GET` | `/constructor_stats` | All-time stats for all constructors |
 | `GET` | `/news` | Latest F1 news (top 10 articles) |
@@ -123,11 +130,16 @@ f1companion-api/
 │   │   ├── standings_router.py  # /driver_standings, /constructor_standings
 │   │   ├── stats_router.py      # /driver_stats, /constructor_stats
 │   │   ├── circuit_router.py    # /circuits
+│   │   ├── teammate_h2h_router.py # /teammate_h2h
+│   │   ├── race_control_router.py # /race_control
 │   │   └── news_router.py       # /news
 │   │
 │   ├── services/                # Business logic layer
 │   │   ├── schedule_service.py  # Schedule fetching and formatting
 │   │   ├── race_service.py      # Next race, countdown, race results
+│   │   ├── round_results_service.py # Bulk cache manager for round results
+│   │   ├── race_control_service.py # Race control messages fetching
+│   │   ├── teammate_h2h_service.py # Teammate head-to-head comparison
 │   │   ├── driver_service.py    # Driver information
 │   │   ├── constructor_service.py # Constructor information
 │   │   ├── standings_service.py # WDC and WCC standings
