@@ -13,6 +13,7 @@ router = APIRouter()
 # Resolve the favicon path relative to this file's location
 FAVICON_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "favicon" / "f1_companion_icon.png"
 INDEX_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "index.html"
+API_DOCS_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "api_docs.html"
 
 
 import os
@@ -27,6 +28,12 @@ def read_root():
             content = content.replace("</style>", "    a[href='/race_control'] { display: none !important; }\n    </style>")
             
         return HTMLResponse(content=content)
+
+
+@router.get("/api-docs", response_class=HTMLResponse)
+def api_docs():
+    with open(API_DOCS_HTML_PATH, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
 
 
 import time

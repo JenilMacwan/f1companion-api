@@ -15,9 +15,9 @@ Built to power the **F1 Companion** Flutter app.
 - 🏟️ **Circuits** — Info on all 2026 circuits including track layout images
 - 📊 **Race Results** — Results for any race by round and year (incl. qualifying and sprints)
 - 🤝 **Teammate Head-to-Head** — Comprehensive stats comparing teammates across all sessions
-- 🚩 **Race Control** — Live and historical race control messages (flags, safety cars, etc.)
-- 📈 **Deep Driver Stats** — Career wins, podiums, poles, points, championships, and full race history
-- 🔧 **Constructor Stats** — All-time win/podium rates for any team
+- 🚩 **Race Control** — Live and historical race control messages (flags, safety cars, etc.) - Under Development
+- 🧑‍✈️ **Driver Profiles & Stats** — Driver profile data along with career wins, podiums, poles, points, championships, and full race history
+- 🔧 **Constructor Profiles & Stats** — Constructor profile data and all-time win/podium rates for any team
 - 📰 **F1 News** — Latest headlines sourced from Sky Sports F1 RSS feed
 
 ---
@@ -87,16 +87,18 @@ The server starts at `http://127.0.0.1:5000`. Visit the root endpoint to see all
 | `GET` | `/sprint_results/{round}/{year}` | Sprint results for a specific round |
 | `GET` | `/sprint_qualifying_results/{round}/{year}` | Sprint qualifying results for a specific round |
 | `GET` | `/race_control` | Live and historical race control messages |
-| `GET` | `/driver_stats` | Full career stats for all drivers |
+| `GET` | `/driver_profile` | Driver profiles & full career stats for all drivers |
 | `GET` | `/constructor_stats` | All-time stats for all constructors |
+| `GET` | `/constructor_profile` | Constructor profiles & history |
 | `GET` | `/news` | Latest F1 news (top 10 articles) |
 
 ### Example Requests
 
 ```
 GET /race_results/1/2025        → Results for Round 1 of 2025
-GET /driver_stats/              → Career stats of all the drivers in current grid
+GET /driver_profile/            → Profile and career stats of all drivers in current grid
 GET /constructor_stats/         → Career Stats for all teams in current grid
+GET /constructor_profile/       → Profile and history for all teams in current grid
 ```
 
 ---
@@ -125,10 +127,10 @@ f1companion-api/
 │   │   ├── system_router.py     # /, /health, /favicon.ico
 │   │   ├── schedule_router.py   # /schedule
 │   │   ├── race_router.py       # /next_race, /race_results
-│   │   ├── driver_router.py     # /drivers
-│   │   ├── constructor_router.py# /constructors
+│   │   ├── driver_router.py     # /drivers, /driver_profile
+│   │   ├── constructor_router.py# /constructors, /constructor_profile
 │   │   ├── standings_router.py  # /driver_standings, /constructor_standings
-│   │   ├── stats_router.py      # /driver_stats, /constructor_stats
+│   │   ├── stats_router.py      # /constructor_stats
 │   │   ├── circuit_router.py    # /circuits
 │   │   ├── teammate_h2h_router.py # /teammate_h2h
 │   │   ├── race_control_router.py # /race_control
@@ -175,6 +177,7 @@ f1companion-api/
 fastapi
 uvicorn
 requests
+python-dotenv
 emoji-country-flag
 feedparser
 ```

@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation | F1 Companion API</title>
+    <meta name="description"
+        content="Complete API documentation for the F1 Companion API. Explore all endpoints, parameters, and response schemas for real-time Formula 1 data.">
+    <meta name="keywords"
+        content="F1 API documentation, Formula 1 API docs, F1 Companion API reference, REST API docs">
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="https://f1companion-api.vercel.app/api-docs">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="API Documentation | F1 Companion API">
+    <meta property="og:description"
+        content="Complete REST API reference for real-time Formula 1 data — schedules, standings, driver stats, and more.">
+    <meta property="og:url" content="https://f1companion-api.vercel.app/api-docs">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --f1-red: #E10600;
+            --f1-red-glow: rgba(225, 6, 0, 0.4);
+            --f1-red-dim: rgba(225, 6, 0, 0.15);
+            --bg-dark: #0A0A0A;
+            --bg-card: rgba(25, 25, 25, 0.7);
+            --bg-code: rgba(15, 15, 15, 0.9);
+            --text-main: #FFFFFF;
+            --text-muted: #A0A0A0;
+            --text-dim: #666;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --accent-green: #00FF88;
+            --accent-yellow: #FFD600;
+            --accent-blue: #60A5FA;
+            --accent-purple: #A78BFA;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(225, 6, 0, 0.06), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(225, 6, 0, 0.04), transparent 25%);
+            overflow-x: hidden;
+        }
+
+        /* ── Background Grid ── */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            pointer-events: none;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+        }
+
+        /* ── Layout ── */
+        .page-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 100;
+            padding: 2rem 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-header a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .sidebar-logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .sidebar-logo span {
+            color: var(--f1-red);
+        }
+
+        .sidebar-version {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .sidebar-section {
+            padding: 0.75rem 1.5rem 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 1.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 400;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .sidebar-link.active {
+            color: var(--f1-red);
+            border-left-color: var(--f1-red);
+            background: var(--f1-red-dim);
+            font-weight: 500;
+        }
+
+        .sidebar-link .method-sm {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--accent-green);
+            flex-shrink: 0;
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 3rem 4rem 6rem;
+            max-width: 900px;
+        }
+
+        /* ── Hero ── */
+        .docs-hero {
+            margin-bottom: 3.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .docs-hero .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        .docs-hero .back-link:hover {
+            color: var(--f1-red);
+        }
+
+        .docs-hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FFF 0%, #A0A0A0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+        }
+
+        .docs-hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            max-width: 600px;
+        }
+
+        .base-url-box {
+            margin-top: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .base-url-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .base-url-value {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            color: var(--accent-green);
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            color: var(--text-main);
+            border-color: var(--border-hover);
+        }
+
+        .copy-btn.copied {
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        /* ── Endpoint Section ── */
+        .endpoint-section {
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            background: var(--bg-card);
+            transition: border-color 0.3s;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .endpoint-section:hover {
+            border-color: var(--border-hover);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .endpoint-header:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .method-badge {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 5px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .method-get {
+            background: rgba(0, 255, 136, 0.12);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .endpoint-path-text {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            flex: 1;
+        }
+
+        .endpoint-path-text .param {
+            color: var(--accent-yellow);
+        }
+
+        .endpoint-desc-brief {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 300;
+            display: none;
+        }
+
+        .endpoint-chevron {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .endpoint-section.open .endpoint-chevron {
+            transform: rotate(180deg);
+        }
+
+        .endpoint-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .endpoint-body-inner {
+            padding: 0 1.5rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .endpoint-body-inner .desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 300;
+            margin: 1.25rem 0;
+            line-height: 1.7;
+        }
+
+        .dev-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(255, 214, 0, 0.1);
+            border: 1px solid rgba(255, 214, 0, 0.2);
+            color: var(--accent-yellow);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+        }
+
+        /* ── Parameters Table ── */
+        .params-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.6rem;
+        }
+
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+
+        .params-table th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .params-table td {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.88rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: top;
+        }
+
+        .params-table code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: var(--accent-blue);
+            background: rgba(96, 165, 250, 0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .param-type {
+            color: var(--accent-purple);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+
+        .param-default {
+            color: var(--text-dim);
+            font-size: 0.82rem;
+        }
+
+        .param-desc {
+            color: var(--text-muted);
+        }
+
+        .param-required {
+            color: var(--f1-red);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* ── Code Block ── */
+        .response-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.6rem;
+        }
+
+        .code-block {
+            position: relative;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .code-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-block-lang {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .code-copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .code-copy-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .code-copy-btn.copied {
+            color: var(--accent-green);
+        }
+
+        .code-block pre {
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 1.65;
+            color: var(--text-muted);
+        }
+
+        /* JSON Syntax Highlighting */
+        .json-key {
+            color: var(--accent-blue);
+        }
+
+        .json-string {
+            color: var(--accent-green);
+        }
+
+        .json-number {
+            color: var(--accent-yellow);
+        }
+
+        .json-bool {
+            color: var(--accent-purple);
+        }
+
+        .json-null {
+            color: var(--text-dim);
+        }
+
+        /* ── Note callout ── */
+        .note {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0.85rem 1rem;
+            background: rgba(96, 165, 250, 0.06);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .note-icon {
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .warning-note {
+            background: rgba(255, 214, 0, 0.06);
+            border-color: rgba(255, 214, 0, 0.15);
+        }
+
+        /* ── Section Divider ── */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 2.5rem 0 1.5rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .section-divider-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .section-divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        /* ── Mobile Hamburger ── */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 200;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 90;
+        }
+
+        /* ── Footer ── */
+        .docs-footer {
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .docs-footer a {
+            color: var(--f1-red);
+            text-decoration: none;
+        }
+
+        .docs-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* ── Responsive ── */
+        @media (max-width: 1100px) {
+            .main-content {
+                padding: 3rem 2.5rem 6rem;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .mobile-toggle {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 4.5rem 1.5rem 4rem;
+            }
+
+            .docs-hero h1 {
+                font-size: 2rem;
+            }
+
+            .endpoint-desc-brief {
+                display: none !important;
+            }
+
+            .base-url-box {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (min-width: 861px) {
+            .endpoint-desc-brief {
+                display: block;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="page-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/">
+                    <div class="sidebar-logo">F1 Companion <span>API</span></div>
+                    <div class="sidebar-version">v1.0.0 — Documentation</div>
+                </a>
+            </div>
+
+            <div class="sidebar-section">System</div>
+            <a href="#get-root" class="sidebar-link"><span class="method-sm">GET</span> /</a>
+            <a href="#get-health" class="sidebar-link"><span class="method-sm">GET</span> /health</a>
+
+            <div class="sidebar-section">Schedule & Races</div>
+            <a href="#get-schedule" class="sidebar-link"><span class="method-sm">GET</span> /schedule</a>
+            <a href="#get-next-race" class="sidebar-link"><span class="method-sm">GET</span> /next_race</a>
+            <a href="#get-circuits" class="sidebar-link"><span class="method-sm">GET</span> /circuits</a>
+
+            <div class="sidebar-section">Drivers</div>
+            <a href="#get-drivers" class="sidebar-link"><span class="method-sm">GET</span> /drivers</a>
+            <a href="#get-driver-profile" class="sidebar-link"><span class="method-sm">GET</span> /driver_profile</a>
+
+            <div class="sidebar-section">Constructors</div>
+            <a href="#get-constructors" class="sidebar-link"><span class="method-sm">GET</span> /constructors</a>
+            <a href="#get-constructor-profile" class="sidebar-link"><span class="method-sm">GET</span> /constructor_profile</a>
+            <a href="#get-constructor-stats" class="sidebar-link"><span class="method-sm">GET</span> /constructor_stats</a>
+
+            <div class="sidebar-section">Standings</div>
+            <a href="#get-driver-standings" class="sidebar-link"><span class="method-sm">GET</span> /driver_standings</a>
+            <a href="#get-constructor-standings" class="sidebar-link"><span class="method-sm">GET</span> /constructor_standings</a>
+            <a href="#get-teammate-h2h" class="sidebar-link"><span class="method-sm">GET</span> /teammate_h2h</a>
+
+            <div class="sidebar-section">Results</div>
+            <a href="#get-race-results" class="sidebar-link"><span class="method-sm">GET</span> /race_results</a>
+            <a href="#get-qualifying-results" class="sidebar-link"><span class="method-sm">GET</span> /qualifying_results</a>
+            <a href="#get-sprint-results" class="sidebar-link"><span class="method-sm">GET</span> /sprint_results</a>
+            <a href="#get-sprint-qualifying-results" class="sidebar-link"><span class="method-sm">GET</span> /sprint_qualifying_results</a>
+
+            <div class="sidebar-section">Live</div>
+            <a href="#get-race-control" class="sidebar-link"><span class="method-sm">GET</span> /race_control</a>
+
+            <div class="sidebar-section">Content</div>
+            <a href="#get-news" class="sidebar-link"><span class="method-sm">GET</span> /news</a>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero -->
+            <div class="docs-hero">
+                <a href="/" class="back-link">← Back to API Home</a>
+                <h1>API Documentation</h1>
+                <p>Complete reference for all F1 Companion API endpoints. Every response is JSON.</p>
+                <div class="base-url-box">
+                    <span class="base-url-label">Base URL</span>
+                    <span class="base-url-value" id="baseUrl">https://f1companion-api.vercel.app</span>
+                    <button class="copy-btn" onclick="copyText('baseUrl', this)">Copy</button>
+                </div>
+            </div>
+
+            <!-- ═══════════════ SYSTEM ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">System</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET / -->
+            <div class="endpoint-section" id="get-root">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/</span>
+                    <span class="endpoint-desc-brief">API landing page</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the HTML landing page with links to all available endpoints. This is the interactive homepage you see when visiting the API root.</div>
+                        <div class="note">
+                            <span class="note-icon">ℹ️</span>
+                            <span>This endpoint returns <strong>HTML</strong>, not JSON. All other endpoints return JSON.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /health -->
+            <div class="endpoint-section" id="get-health">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/health</span>
+                    <span class="endpoint-desc-brief">API health check</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the API health status, version, server uptime, and the reachability of external dependencies (Jolpica Ergast API).</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"healthy"</span>,
+  <span class="json-key">"version"</span>: <span class="json-string">"1.0.0"</span>,
+  <span class="json-key">"uptime_seconds"</span>: <span class="json-number">3600</span>,
+  <span class="json-key">"dependencies"</span>: {
+    <span class="json-key">"jolpica_ergast_api"</span>: <span class="json-string">"online"</span>
+  }
+}</pre>
+                        </div>
+                        <div class="note">
+                            <span class="note-icon">ℹ️</span>
+                            <span>Status is <code>"healthy"</code> when all dependencies are online, or <code>"degraded"</code> if any external API is unreachable.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ SCHEDULE & RACES ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Schedule & Races</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /schedule -->
+            <div class="endpoint-section" id="get-schedule">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/schedule</span>
+                    <span class="endpoint-desc-brief">Full season calendar</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the complete season race calendar with all session times (practice, qualifying, sprint, race) and whether each race has been completed.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"races"</span>: <span class="json-number">24</span>,
+  <span class="json-key">"schedule"</span>: [
+    {
+      <span class="json-key">"round"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"racename"</span>: <span class="json-string">"Bahrain Grand Prix"</span>,
+      <span class="json-key">"circuitid"</span>: <span class="json-string">"bahrain"</span>,
+      <span class="json-key">"circuitname"</span>: <span class="json-string">"Bahrain International Circuit"</span>,
+      <span class="json-key">"circuitlocation"</span>: <span class="json-string">"Sakhir"</span>,
+      <span class="json-key">"circuitcountry"</span>: <span class="json-string">"Bahrain"</span>,
+      <span class="json-key">"GrandPrix"</span>: <span class="json-string">"2026-03-08"</span>,
+      <span class="json-key">"time"</span>: <span class="json-string">"15:00:00Z"</span>,
+      <span class="json-key">"is_completed"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"FirstPractice"</span>: { <span class="json-key">"date"</span>: <span class="json-string">"2026-03-06"</span>, <span class="json-key">"time"</span>: <span class="json-string">"11:30:00Z"</span> },
+      <span class="json-key">"Qualifying"</span>: { <span class="json-key">"date"</span>: <span class="json-string">"2026-03-07"</span>, <span class="json-key">"time"</span>: <span class="json-string">"15:00:00Z"</span> }
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /next_race -->
+            <div class="endpoint-section" id="get-next-race">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/next_race</span>
+                    <span class="endpoint-desc-brief">Live countdown & weather</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the next upcoming race with a live countdown to the next session, current track weather via Open-Meteo, sprint weekend detection, and awareness of any currently ongoing session.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"round"</span>: <span class="json-string">"5"</span>,
+  <span class="json-key">"race_name"</span>: <span class="json-string">"Spanish Grand Prix"</span>,
+  <span class="json-key">"circuit"</span>: <span class="json-string">"Circuit de Barcelona-Catalunya"</span>,
+  <span class="json-key">"country"</span>: <span class="json-string">"Spain"</span>,
+  <span class="json-key">"flag_emoji"</span>: <span class="json-string">"🇪🇸"</span>,
+  <span class="json-key">"weather"</span>: {
+    <span class="json-key">"temp"</span>: <span class="json-string">"28°C"</span>,
+    <span class="json-key">"condition"</span>: <span class="json-string">"Clear Sky"</span>
+  },
+  <span class="json-key">"countdown"</span>: {
+    <span class="json-key">"days"</span>: <span class="json-number">2</span>,
+    <span class="json-key">"hours"</span>: <span class="json-number">5</span>,
+    <span class="json-key">"minutes"</span>: <span class="json-number">30</span>,
+    <span class="json-key">"seconds"</span>: <span class="json-number">15</span>
+  },
+  <span class="json-key">"next_session"</span>: <span class="json-string">"Session Name : Qualifying  Time Zone : UTC 2026-06-20 14:00 UTC"</span>,
+  <span class="json-key">"ongoing_session"</span>: <span class="json-null">null</span>,
+  <span class="json-key">"is_sprint_weekend"</span>: <span class="json-bool">false</span>
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /circuits -->
+            <div class="endpoint-section" id="get-circuits">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/circuits</span>
+                    <span class="endpoint-desc-brief">All circuit details</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns information on all circuits in the current season, including track layout image URLs hosted on GitHub.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_circuits"</span>: <span class="json-number">24</span>,
+  <span class="json-key">"circuits"</span>: [
+    {
+      <span class="json-key">"circuitid"</span>: <span class="json-string">"bahrain"</span>,
+      <span class="json-key">"circuitname"</span>: <span class="json-string">"Bahrain International Circuit"</span>,
+      <span class="json-key">"circuitlocation"</span>: <span class="json-string">"Sakhir"</span>,
+      <span class="json-key">"circuitcountry"</span>: <span class="json-string">"Bahrain"</span>,
+      <span class="json-key">"circuitlayout"</span>: <span class="json-string">"https://github.com/.../sakhir-bahrain2026.webp?raw=true"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ DRIVERS ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Drivers</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /drivers -->
+            <div class="endpoint-section" id="get-drivers">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/drivers</span>
+                    <span class="endpoint-desc-brief">Current driver lineup</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns a lightweight list of all official drivers in the current season. Filtered to only include confirmed 2026 grid drivers.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_drivers"</span>: <span class="json-number">22</span>,
+  <span class="json-key">"drivers"</span>: [
+    {
+      <span class="json-key">"driverid"</span>: <span class="json-string">"max_verstappen"</span>,
+      <span class="json-key">"firstname"</span>: <span class="json-string">"Max"</span>,
+      <span class="json-key">"lastname"</span>: <span class="json-string">"Verstappen"</span>,
+      <span class="json-key">"nationality"</span>: <span class="json-string">"Dutch"</span>,
+      <span class="json-key">"number"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"code"</span>: <span class="json-string">"VER"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /driver_profile -->
+            <div class="endpoint-section" id="get-driver-profile">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/driver_profile</span>
+                    <span class="endpoint-desc-brief">Enriched profiles & career stats</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns enriched driver profiles combining identity, headshot image, current team, and full career statistics — including world championships, total wins, poles, podiums, career points, and a round-by-round points progression for the current season.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_drivers"</span>: <span class="json-number">22</span>,
+  <span class="json-key">"driver_profiles"</span>: [
+    {
+      <span class="json-key">"driver_id"</span>: <span class="json-string">"max_verstappen"</span>,
+      <span class="json-key">"driver_name"</span>: <span class="json-string">"Max Verstappen"</span>,
+      <span class="json-key">"driver_code"</span>: <span class="json-string">"VER"</span>,
+      <span class="json-key">"driver_number"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"nationality"</span>: <span class="json-string">"Dutch"</span>,
+      <span class="json-key">"driver_image"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"team"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"career_stats"</span>: {
+        <span class="json-key">"world_championships"</span>: <span class="json-number">4</span>,
+        <span class="json-key">"total_races"</span>: <span class="json-number">240</span>,
+        <span class="json-key">"total_pole"</span>: <span class="json-number">50</span>,
+        <span class="json-key">"total_wins"</span>: <span class="json-number">75</span>,
+        <span class="json-key">"total_podiums"</span>: <span class="json-number">130</span>,
+        <span class="json-key">"career_points"</span>: <span class="json-number">3500.0</span>,
+        <span class="json-key">"total_seasons"</span>: <span class="json-number">12</span>,
+        <span class="json-key">"current_season"</span>: { <span class="json-key">"position"</span>: <span class="json-string">"1"</span>, <span class="json-key">"points"</span>: <span class="json-string">"200"</span> }
+      },
+      <span class="json-key">"points_progression"</span>: [
+        { <span class="json-key">"round"</span>: <span class="json-string">"1"</span>, <span class="json-key">"points"</span>: <span class="json-number">25.0</span>, <span class="json-key">"cumulative"</span>: <span class="json-number">25.0</span> }
+      ]
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ CONSTRUCTORS ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Constructors</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /constructors -->
+            <div class="endpoint-section" id="get-constructors">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/constructors</span>
+                    <span class="endpoint-desc-brief">Current team lineup</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns a lightweight list of all constructors (teams) in the current season.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_constructors"</span>: <span class="json-number">11</span>,
+  <span class="json-key">"constructors"</span>: [
+    {
+      <span class="json-key">"constructorid"</span>: <span class="json-string">"red_bull"</span>,
+      <span class="json-key">"name"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"nationality"</span>: <span class="json-string">"Austrian"</span>,
+      <span class="json-key">"url"</span>: <span class="json-string">"http://en.wikipedia.org/wiki/Red_Bull_Racing"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /constructor_profile -->
+            <div class="endpoint-section" id="get-constructor-profile">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/constructor_profile</span>
+                    <span class="endpoint-desc-brief">Enriched profiles & history</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns enriched constructor profiles combining identity, logo, car image, current driver lineup, and full career statistics — including championships, total wins, podiums, and a round-by-round points progression for the current season.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_constructors"</span>: <span class="json-number">11</span>,
+  <span class="json-key">"constructor_profiles"</span>: [
+    {
+      <span class="json-key">"constructor_id"</span>: <span class="json-string">"red_bull"</span>,
+      <span class="json-key">"constructor_name"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"constructor_logo"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"constructor_car"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"drivers"</span>: [<span class="json-string">"Max Verstappen"</span>, <span class="json-string">"Liam Lawson"</span>],
+      <span class="json-key">"stats"</span>: {
+        <span class="json-key">"constructor_championships"</span>: <span class="json-number">6</span>,
+        <span class="json-key">"driver_championships"</span>: <span class="json-number">7</span>,
+        <span class="json-key">"total_races"</span>: <span class="json-number">390</span>,
+        <span class="json-key">"wins"</span>: <span class="json-number">135</span>,
+        <span class="json-key">"podiums"</span>: <span class="json-number">290</span>
+      },
+      <span class="json-key">"points_progression"</span>: [
+        { <span class="json-key">"round"</span>: <span class="json-string">"1"</span>, <span class="json-key">"points"</span>: <span class="json-number">40.0</span>, <span class="json-key">"cumulative"</span>: <span class="json-number">40.0</span> }
+      ]
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /constructor_stats -->
+            <div class="endpoint-section" id="get-constructor-stats">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/constructor_stats</span>
+                    <span class="endpoint-desc-brief">All-time team stats</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns all-time statistics for every constructor on the current grid, including win/podium percentages and current season standing.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_constructors"</span>: <span class="json-number">11</span>,
+  <span class="json-key">"constructor_stats"</span>: [
+    {
+      <span class="json-key">"constructor_id"</span>: <span class="json-string">"ferrari"</span>,
+      <span class="json-key">"constructor_name"</span>: <span class="json-string">"Ferrari"</span>,
+      <span class="json-key">"stats"</span>: {
+        <span class="json-key">"constructor_championships"</span>: <span class="json-number">16</span>,
+        <span class="json-key">"driver_championships"</span>: <span class="json-number">15</span>,
+        <span class="json-key">"total_races"</span>: <span class="json-number">1130</span>,
+        <span class="json-key">"wins"</span>: <span class="json-number">250</span>,
+        <span class="json-key">"win_percentage"</span>: <span class="json-string">"22.12%"</span>,
+        <span class="json-key">"podiums"</span>: <span class="json-number">820</span>,
+        <span class="json-key">"podium_percentage"</span>: <span class="json-string">"36.28%"</span>,
+        <span class="json-key">"current_season"</span>: {
+          <span class="json-key">"year"</span>: <span class="json-string">"2026"</span>,
+          <span class="json-key">"position"</span>: <span class="json-string">"2"</span>,
+          <span class="json-key">"points"</span>: <span class="json-string">"200"</span>
+        }
+      }
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ STANDINGS ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Standings</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /driver_standings -->
+            <div class="endpoint-section" id="get-driver-standings">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/driver_standings</span>
+                    <span class="endpoint-desc-brief">Live WDC standings</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the live World Drivers' Championship standings for the current season.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"SEASON IN PROGRESS"</span>,
+  <span class="json-key">"total_drivers"</span>: <span class="json-number">22</span>,
+  <span class="json-key">"drivers"</span>: [
+    {
+      <span class="json-key">"position"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"points"</span>: <span class="json-string">"200"</span>,
+      <span class="json-key">"driverid"</span>: <span class="json-string">"max_verstappen"</span>,
+      <span class="json-key">"name"</span>: <span class="json-string">"Max Verstappen"</span>,
+      <span class="json-key">"team_name"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"nationality"</span>: <span class="json-string">"Dutch"</span>,
+      <span class="json-key">"url"</span>: <span class="json-string">"https://en.wikipedia.org/wiki/Max_Verstappen"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                        <div class="note">
+                            <span class="note-icon">ℹ️</span>
+                            <span>Returns <code>"status": "SEASON IS YET TO BEGIN"</code> with an empty list if no races have been completed.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /constructor_standings -->
+            <div class="endpoint-section" id="get-constructor-standings">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/constructor_standings</span>
+                    <span class="endpoint-desc-brief">Live WCC standings</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the live World Constructors' Championship standings, including each team's current driver lineup.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"SEASON IN PROGRESS"</span>,
+  <span class="json-key">"total_teams"</span>: <span class="json-number">11</span>,
+  <span class="json-key">"constructors"</span>: [
+    {
+      <span class="json-key">"position"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"points"</span>: <span class="json-string">"400"</span>,
+      <span class="json-key">"name"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"drivers"</span>: [<span class="json-string">"Max Verstappen"</span>, <span class="json-string">"Liam Lawson"</span>],
+      <span class="json-key">"nationality"</span>: <span class="json-string">"Austrian"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /teammate_h2h -->
+            <div class="endpoint-section" id="get-teammate-h2h">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/teammate_h2h</span>
+                    <span class="endpoint-desc-brief">Head-to-head comparisons</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns comprehensive head-to-head comparison stats for all teammate pairs on the current grid. Covers qualifying, sprint qualifying, sprint race, main race, and championship standings delta — with per-round breakdown.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2026"</span>,
+  <span class="json-key">"total_teams"</span>: <span class="json-number">10</span>,
+  <span class="json-key">"head_to_head"</span>: [
+    {
+      <span class="json-key">"constructor"</span>: <span class="json-string">"Red Bull"</span>,
+      <span class="json-key">"constructor_id"</span>: <span class="json-string">"red_bull"</span>,
+      <span class="json-key">"constructor_logo"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"drivers"</span>: {
+        <span class="json-key">"driver_a"</span>: { <span class="json-key">"driver_id"</span>: <span class="json-string">"lawson"</span>, <span class="json-key">"name"</span>: <span class="json-string">"Liam Lawson"</span> },
+        <span class="json-key">"driver_b"</span>: { <span class="json-key">"driver_id"</span>: <span class="json-string">"max_verstappen"</span>, <span class="json-key">"name"</span>: <span class="json-string">"Max Verstappen"</span> }
+      },
+      <span class="json-key">"qualifying"</span>: {
+        <span class="json-key">"driver_a_wins"</span>: <span class="json-number">0</span>,
+        <span class="json-key">"driver_b_wins"</span>: <span class="json-number">5</span>,
+        <span class="json-key">"ties"</span>: <span class="json-number">0</span>,
+        <span class="json-key">"total_completed"</span>: <span class="json-number">5</span>
+      },
+      <span class="json-key">"race"</span>: { <span class="json-key">"driver_a_wins"</span>: <span class="json-number">1</span>, <span class="json-key">"driver_b_wins"</span>: <span class="json-number">4</span>, <span class="json-key">"ties"</span>: <span class="json-number">0</span> },
+      <span class="json-key">"standings"</span>: {
+        <span class="json-key">"driver_a"</span>: { <span class="json-key">"position"</span>: <span class="json-string">"8"</span>, <span class="json-key">"points"</span>: <span class="json-string">"50"</span> },
+        <span class="json-key">"driver_b"</span>: { <span class="json-key">"position"</span>: <span class="json-string">"1"</span>, <span class="json-key">"points"</span>: <span class="json-string">"200"</span> },
+        <span class="json-key">"points_delta"</span>: <span class="json-number">150.0</span>
+      }
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ RESULTS ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Results</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /race_results/{round}/{year} -->
+            <div class="endpoint-section" id="get-race-results">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/race_results/<span class="param">{round}</span>/<span class="param">{year}</span></span>
+                    <span class="endpoint-desc-brief">Race results by round</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns detailed race results for a specific round and year, including grid position, finishing status, race time, and fastest lap.</div>
+                        <div class="params-label">Path Parameters</div>
+                        <table class="params-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>round</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Race round number (e.g., <code>1</code>)</td></tr>
+                                <tr><td><code>year</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Season year (e.g., <code>2025</code>)</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2025"</span>,
+  <span class="json-key">"round"</span>: <span class="json-string">"1"</span>,
+  <span class="json-key">"race_name"</span>: <span class="json-string">"Australian Grand Prix"</span>,
+  <span class="json-key">"results"</span>: [
+    {
+      <span class="json-key">"position"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"positionText"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"driver"</span>: <span class="json-string">"Lando Norris"</span>,
+      <span class="json-key">"driver_image"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"constructor"</span>: <span class="json-string">"McLaren"</span>,
+      <span class="json-key">"points"</span>: <span class="json-string">"25"</span>,
+      <span class="json-key">"grid"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"status"</span>: <span class="json-string">"Finished"</span>,
+      <span class="json-key">"time"</span>: <span class="json-string">"1:24:28.476"</span>,
+      <span class="json-key">"fastest_lap_time"</span>: <span class="json-string">"1:21.300"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                        <div class="note">
+                            <span class="note-icon">ℹ️</span>
+                            <span>Returns <code>"status": "RESULT NOT YET AVAILABLE"</code> if the race hasn't taken place. The <code>positionText</code> field uses <code>"R"</code> for retired and <code>"D"</code> for disqualified drivers.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /qualifying_results/{round}/{year} -->
+            <div class="endpoint-section" id="get-qualifying-results">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/qualifying_results/<span class="param">{round}</span>/<span class="param">{year}</span></span>
+                    <span class="endpoint-desc-brief">Qualifying results by round</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns qualifying session results with Q1, Q2, and Q3 lap times for a specific round and year.</div>
+                        <div class="params-label">Path Parameters</div>
+                        <table class="params-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>round</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Race round number</td></tr>
+                                <tr><td><code>year</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Season year</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"season"</span>: <span class="json-string">"2025"</span>,
+  <span class="json-key">"round"</span>: <span class="json-string">"1"</span>,
+  <span class="json-key">"race_name"</span>: <span class="json-string">"Australian Grand Prix"</span>,
+  <span class="json-key">"results"</span>: [
+    {
+      <span class="json-key">"position"</span>: <span class="json-string">"1"</span>,
+      <span class="json-key">"driver"</span>: <span class="json-string">"Lando Norris"</span>,
+      <span class="json-key">"driver_image"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"constructor"</span>: <span class="json-string">"McLaren"</span>,
+      <span class="json-key">"q1"</span>: <span class="json-string">"1:22.123"</span>,
+      <span class="json-key">"q2"</span>: <span class="json-string">"1:21.456"</span>,
+      <span class="json-key">"q3"</span>: <span class="json-string">"1:20.789"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /sprint_results/{round}/{year} -->
+            <div class="endpoint-section" id="get-sprint-results">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/sprint_results/<span class="param">{round}</span>/<span class="param">{year}</span></span>
+                    <span class="endpoint-desc-brief">Sprint results by round</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns sprint race results for a specific round and year. Only available for sprint weekends. Response schema matches <code>/race_results</code>.</div>
+                        <div class="params-label">Path Parameters</div>
+                        <table class="params-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>round</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Race round number</td></tr>
+                                <tr><td><code>year</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Season year</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /sprint_qualifying_results/{round}/{year} -->
+            <div class="endpoint-section" id="get-sprint-qualifying-results">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/sprint_qualifying_results/<span class="param">{round}</span>/<span class="param">{year}</span></span>
+                    <span class="endpoint-desc-brief">Sprint qualifying by round</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns sprint qualifying results (derived from sprint grid positions) for a specific round and year. Only available for sprint weekends.</div>
+                        <div class="params-label">Path Parameters</div>
+                        <table class="params-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>round</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Race round number</td></tr>
+                                <tr><td><code>year</code> <span class="param-required">required</span></td><td><span class="param-type">string</span></td><td class="param-desc">Season year</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ LIVE ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Live</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /race_control -->
+            <div class="endpoint-section" id="get-race-control">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/race_control</span>
+                    <span class="dev-badge">⚠️ Under Development</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns live and historical race control messages — flags, penalties, safety car deployments, investigations — from the OpenF1 API. This endpoint is <strong>not available in Vercel production</strong> (local development only).</div>
+                        <div class="params-label">Query Parameters</div>
+                        <table class="params-table">
+                            <thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>session_key</code></td><td><span class="param-type">string</span></td><td><span class="param-default">"latest"</span></td><td class="param-desc">Session key (e.g., <code>latest</code> or <code>9158</code>)</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"session_key"</span>: <span class="json-string">"latest"</span>,
+  <span class="json-key">"total_messages"</span>: <span class="json-number">42</span>,
+  <span class="json-key">"messages"</span>: [
+    {
+      <span class="json-key">"timestamp"</span>: <span class="json-string">"2026-03-08T15:02:00"</span>,
+      <span class="json-key">"category"</span>: <span class="json-string">"Flag"</span>,
+      <span class="json-key">"message"</span>: <span class="json-string">"GREEN LIGHT - PIT EXIT OPEN"</span>,
+      <span class="json-key">"flag"</span>: <span class="json-string">"GREEN"</span>,
+      <span class="json-key">"driver_number"</span>: <span class="json-null">null</span>,
+      <span class="json-key">"lap_number"</span>: <span class="json-number">1</span>,
+      <span class="json-key">"scope"</span>: <span class="json-string">"Track"</span>,
+      <span class="json-key">"sector"</span>: <span class="json-null">null</span>
+    }
+  ]
+}</pre>
+                        </div>
+                        <div class="note warning-note">
+                            <span class="note-icon">⚠️</span>
+                            <span>This endpoint is excluded from Vercel production builds. It is only available when running the API locally.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════ CONTENT ═══════════════ -->
+            <div class="section-divider">
+                <span class="section-divider-text">Content</span>
+                <div class="section-divider-line"></div>
+            </div>
+
+            <!-- GET /news -->
+            <div class="endpoint-section" id="get-news">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/news</span>
+                    <span class="endpoint-desc-brief">Latest F1 news</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the latest F1 news articles aggregated from multiple RSS sources (Formula 1, Sky Sports, Autosport). Articles are deduplicated and sorted by publish date, returning up to 10 articles.</div>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"articles"</span>: [
+    {
+      <span class="json-key">"title"</span>: <span class="json-string">"Verstappen takes pole in Spain"</span>,
+      <span class="json-key">"link"</span>: <span class="json-string">"https://www.formula1.com/..."</span>,
+      <span class="json-key">"summary"</span>: <span class="json-string">"Max Verstappen secured pole position with a blistering lap..."</span>,
+      <span class="json-key">"published"</span>: <span class="json-string">"Sat, 21 Jun 2026 14:00:00 GMT"</span>,
+      <span class="json-key">"source"</span>: <span class="json-string">"Formula 1"</span>
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="docs-footer">
+                <p>🏎️ F1 Companion API &copy; 2024 — <a href="/">Back to Home</a></p>
+                <p style="margin-top: 0.5rem;">Data sourced from <a href="https://api.jolpi.ca/" target="_blank">Jolpica Ergast</a>, <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>, and <a href="https://api.openf1.org/" target="_blank">OpenF1</a></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ── Toggle Endpoint Sections ──
+        function toggleEndpoint(header) {
+            const section = header.closest('.endpoint-section');
+            const body = section.querySelector('.endpoint-body');
+
+            if (section.classList.contains('open')) {
+                body.style.maxHeight = '0';
+                section.classList.remove('open');
+            } else {
+                body.style.maxHeight = body.scrollHeight + 'px';
+                section.classList.add('open');
+            }
+        }
+
+        // ── Copy Base URL ──
+        function copyText(elementId, btn) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // ── Copy Code Block ──
+        function copyCode(btn) {
+            const pre = btn.closest('.code-block').querySelector('pre');
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // ── Mobile Sidebar Toggle ──
+        const sidebar = document.getElementById('sidebar');
+        const mobileToggle = document.getElementById('mobileToggle');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        });
+
+        // Close sidebar on link click (mobile)
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 860) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('open');
+                }
+            });
+        });
+
+        // ── Active Sidebar Tracking ──
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const sections = document.querySelectorAll('.endpoint-section');
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    sidebarLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+
+        sections.forEach(section => observer.observe(section));
+
+        // ── Staggered Animation ──
+        document.querySelectorAll('.endpoint-section').forEach((el, i) => {
+            el.style.animationDelay = `${0.05 * i}s`;
+        });
+    </script>
+</body>
+
+</html>
