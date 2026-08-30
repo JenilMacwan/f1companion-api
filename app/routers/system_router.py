@@ -6,7 +6,7 @@ Endpoints: /, /health, /favicon.ico
 
 from pathlib import Path
 from fastapi import APIRouter
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
 router = APIRouter()
 
@@ -41,6 +41,37 @@ from app.core.config import APP_VERSION, SCHEDULE_URL
 from app.core.http_client import http_client
 
 START_TIME = time.time()
+
+ROBOTS_TXT_CONTENT = """User-agent: *
+Allow: /
+
+Sitemap: https://f1companion-api.vercel.app/sitemap.xml
+"""
+
+SITEMAP_XML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://f1companion-api.vercel.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://f1companion-api.vercel.app/api-docs</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>
+"""
+
+@router.get("/robots.txt", response_class=PlainTextResponse)
+def robots_txt():
+    return PlainTextResponse(content=ROBOTS_TXT_CONTENT)
+
+
+@router.get("/sitemap.xml")
+def sitemap_xml():
+    return Response(content=SITEMAP_XML_CONTENT, media_type="application/xml")
+
 
 @router.get("/health")
 def health_check():
