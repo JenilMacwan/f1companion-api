@@ -44,12 +44,14 @@ def evaluate_and_notify_major_event(message_data: Dict[str, Any]):
         title = "🔴 Red Flag"
         body = "Session has been suspended!"
     elif category == "SafetyCar":
-        title = f"🟡 {msg_text}"
+        title = "🟡 Safety Car"
+        body = msg_text if msg_text else "The Safety Car has been deployed."
     elif flag == "YELLOW" and "DOUBLE" in msg_text.upper():
         title = "🟡 Double Yellow Flags"
         body = msg_text
     elif category == "SessionStatus":
-        title = f"{msg_text}"
+        title = "🏁 Session Update"
+        body = msg_text if msg_text else "Track status updated."
     
     # If it's a major event we identified, send the notification
     if title and body:
@@ -57,7 +59,11 @@ def evaluate_and_notify_major_event(message_data: Dict[str, Any]):
             topic=topic,
             title=title,
             body=body,
-            data={"category": str(category), "flag": str(flag)}
+            data={
+                "category": str(category), 
+                "flag": str(flag),
+                "type": "live_event" # CRITICAL: Routes to the "Race Control" UI label
+            }
         )
 
 def notify_breaking_news(article: Dict[str, Any]):
@@ -73,7 +79,8 @@ def notify_breaking_news(article: Dict[str, Any]):
         body = body[:97] + "..."
         
     data = {
-        "url": article.get("link", "")
+        "url": article.get("link", ""),
+        "type": "breaking_news" # CRITICAL: Routes to the "Breaking News" UI label
     }
     
     send_topic_notification(topic, title, body, data)
@@ -83,12 +90,12 @@ def notify_standings_update(top_driver: Dict[str, Any]):
     Sends a push notification when championship standings are updated.
     """
     topic = "standings_updates"
-    title = "🏁 Championship Standings Updated!"
+    title = "Championship Lead Change!"
     
     driver_name = top_driver.get("name", "Unknown Driver")
     points = top_driver.get("points", "0")
     
     body = f"{driver_name} leads the championship with {points} points."
     
-    send_topic_notification(topic, title, body)
-
+    # CRITICAL: Include the data dict with the standings type
+    send_topic_notification(topic, title, body, data={"type": "standings"})

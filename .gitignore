@@ -25,3 +25,4 @@ flag_test.txt
 
 # --- Firebase Credentials ---
 *firebase-adminsdk*.json
+test_fcm.py

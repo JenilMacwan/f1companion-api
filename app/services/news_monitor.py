@@ -4,44 +4,53 @@ Background monitor for news updates.
 
 import asyncio
 import random
+import datetime
 from app.services.news_service import get_f1_news
 from app.services.notification_service import notify_breaking_news
 
-_last_notified_article_url = None
+_sent_urls_today = set()
+_current_day = None
 
-async def start_news_monitoring(interval_hours: int = 3):
+async def start_news_monitoring():
     """
-    Background loop that polls for news every few hours.
-    It picks the latest new article (or a random one from recent news if the latest was already sent).
+    Background loop that polls for news and pushes 5 times a day.
+    It picks a random article that hasn't been sent yet today.
     """
-    global _last_notified_article_url
-    interval_seconds = interval_hours * 3600
-    print(f"Starting news monitor. Polling every {interval_hours} hours...")
+    global _sent_urls_today, _current_day
+    
+    # 5 times a day = 24 hours / 5 = 4.8 hours
+    interval_seconds = int((24 / 5) * 3600)
+    print("Starting news monitor. Pushing 5 times a day...")
 
     while True:
         try:
+            today = datetime.datetime.now().date()
+            # Reset the list of sent articles at the start of a new day
+            if today != _current_day:
+                _current_day = today
+                _sent_urls_today.clear()
+            
             # 1. Fetch latest news
             news_response = get_f1_news()
             articles = news_response.get("articles", [])
             
-            if articles:
-                # 2. Grab the latest article
-                latest_article = articles[0]
-                latest_url = latest_article.get("link")
+            # 2. Filter out articles we've already sent today
+            available_articles = [a for a in articles if a.get("link") not in _sent_urls_today]
+            
+            if available_articles:
+                # 3. Pick a random article from the remaining ones
+                article_to_send = random.choice(available_articles)
+                url = article_to_send.get("link")
                 
-                # 3. If it's a new article we haven't notified about yet, send it
-                if latest_url and latest_url != _last_notified_article_url:
-                    print(f"Pushing breaking news: {latest_article.get('title')}")
-                    notify_breaking_news(latest_article)
-                    _last_notified_article_url = latest_url
-                else:
-                    # As a fallback for the "random" requirement, we can pick a random one 
-                    # if there are no new ones, but usually you only want to push *new* breaking news.
-                    # We will stick to the latest unnotified article.
-                    pass
+                print(f"Pushing breaking news: {article_to_send.get('title')}")
+                notify_breaking_news(article_to_send)
+                
+                # Mark it as sent today
+                if url:
+                    _sent_urls_today.add(url)
                 
         except Exception as e:
             print(f"Error in news monitor loop: {e}")
             
-        # 4. Wait before polling again
+        # Wait before the next push
         await asyncio.sleep(interval_seconds)
