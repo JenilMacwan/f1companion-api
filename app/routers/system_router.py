@@ -45,18 +45,18 @@ START_TIME = time.time()
 ROBOTS_TXT_CONTENT = """User-agent: *
 Allow: /
 
-Sitemap: https://f1companion-api.vercel.app/sitemap.xml
+Sitemap: https://f1-companion-api-ba5k.onrender.com/sitemap.xml
 """
 
 SITEMAP_XML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://f1companion-api.vercel.app/</loc>
+    <loc>https://f1-companion-api-ba5k.onrender.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://f1companion-api.vercel.app/api-docs</loc>
+    <loc>https://f1-companion-api-ba5k.onrender.com/api-docs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
