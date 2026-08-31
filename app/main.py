@@ -17,6 +17,8 @@ import asyncio
 
 from app.core.firebase import initialize_firebase
 from app.services.live_race_monitor import start_live_monitoring
+from app.services.news_monitor import start_news_monitoring
+from app.services.standings_monitor import start_standings_monitoring
 
 from app.core.config import (
     CORS_ORIGINS,
@@ -45,9 +47,10 @@ async def startup_event():
     # Initialize Firebase Admin SDK
     initialize_firebase()
     
-    # Start live race monitor in the background
-    # Note: This runs endlessly while the server is alive
+    # Start background monitors
     asyncio.create_task(start_live_monitoring())
+    asyncio.create_task(start_news_monitoring())
+    asyncio.create_task(start_standings_monitoring())
 
 # --- Middleware ---
 app.add_middleware(

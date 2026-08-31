@@ -11,16 +11,15 @@ def send_topic_notification(topic: str, title: str, body: str, data: Dict[str, s
     """
     try:
         # Define the message payload
+        payload_data = data if data else {}
+        payload_data["title"] = title
+        payload_data["body"] = body
+
         message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
-            data=data if data else {},
+            data=payload_data,
             topic=topic,
         )
-
-        # Send a message to the devices subscribed to the provided topic.
+        
         response = messaging.send(message)
         print(f"Successfully sent message to topic {topic}: {response}")
         return True
@@ -37,7 +36,7 @@ def evaluate_and_notify_major_event(message_data: Dict[str, Any]):
     category = message_data.get("category")
     msg_text = message_data.get("message", "")
     
-    topic = "race_events"
+    topic = "live_race_events"
     title = None
     body = None
 
@@ -45,11 +44,12 @@ def evaluate_and_notify_major_event(message_data: Dict[str, Any]):
         title = "🔴 Red Flag"
         body = "Session has been suspended!"
     elif category == "SafetyCar":
-        title = "🟡 Safety Car Deployed"
-        body = "The Safety Car has been deployed."
+        title = f"🟡 {msg_text}"
     elif flag == "YELLOW" and "DOUBLE" in msg_text.upper():
         title = "🟡 Double Yellow Flags"
         body = msg_text
+    elif category == "SessionStatus":
+        title = f"{msg_text}"
     
     # If it's a major event we identified, send the notification
     if title and body:
@@ -59,3 +59,36 @@ def evaluate_and_notify_major_event(message_data: Dict[str, Any]):
             body=body,
             data={"category": str(category), "flag": str(flag)}
         )
+
+def notify_breaking_news(article: Dict[str, Any]):
+    """
+    Sends a push notification for breaking news.
+    """
+    topic = "breaking_news"
+    title = article.get("title", "Breaking F1 News")
+    
+    # Create a short snippet for the body
+    body = article.get("summary", "")
+    if len(body) > 100:
+        body = body[:97] + "..."
+        
+    data = {
+        "url": article.get("link", "")
+    }
+    
+    send_topic_notification(topic, title, body, data)
+
+def notify_standings_update(top_driver: Dict[str, Any]):
+    """
+    Sends a push notification when championship standings are updated.
+    """
+    topic = "standings_updates"
+    title = "🏁 Championship Standings Updated!"
+    
+    driver_name = top_driver.get("name", "Unknown Driver")
+    points = top_driver.get("points", "0")
+    
+    body = f"{driver_name} leads the championship with {points} points."
+    
+    send_topic_notification(topic, title, body)
+
