@@ -23,3 +23,5 @@ response.json
 flag_src.txt
 flag_test.txt
 
+# --- Firebase Credentials ---
+*firebase-adminsdk*.json

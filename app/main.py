@@ -13,6 +13,10 @@ if _project_root not in sys.path:
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
+
+from app.core.firebase import initialize_firebase
+from app.services.live_race_monitor import start_live_monitoring
 
 from app.core.config import (
     CORS_ORIGINS,
@@ -35,6 +39,15 @@ from app.routers import (
 
 # --- Create Application ---
 app = FastAPI()
+
+@app.on_event("startup")
+async def startup_event():
+    # Initialize Firebase Admin SDK
+    initialize_firebase()
+    
+    # Start live race monitor in the background
+    # Note: This runs endlessly while the server is alive
+    asyncio.create_task(start_live_monitoring())
 
 # --- Middleware ---
 app.add_middleware(

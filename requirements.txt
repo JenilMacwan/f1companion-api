@@ -4,3 +4,5 @@ requests
 python-dotenv
 emoji-country-flag
 feedparser
+firebase-admin
+websockets
