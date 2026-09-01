@@ -3,13 +3,14 @@ Background monitor for live race control updates.
 """
 
 import asyncio
+from datetime import datetime, timezone, timedelta
 from app.services.race_control_service import get_race_control_messages
 from app.core.websocket_manager import websocket_manager
 from app.services.notification_service import evaluate_and_notify_major_event
 
 # Store the number of messages seen so far for the "latest" session
 # so we only broadcast and notify for truly new ones.
-_seen_messages_count = 0
+_seen_messages_count = None
 
 async def start_live_monitoring(poll_interval_seconds: int = 15):
     """
@@ -27,6 +28,14 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
             messages = data.get("messages", [])
             current_count = len(messages)
             
+            # Initialize on first run to avoid spamming old messages
+            if _seen_messages_count is None:
+                _seen_messages_count = current_count
+                
+            # If session changed, message count likely resets or drops
+            elif current_count < _seen_messages_count:
+                _seen_messages_count = 0
+            
             # 2. Check if there are new messages
             if current_count > _seen_messages_count:
                 # We have new messages!
@@ -34,13 +43,33 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
                 
                 # 3. Process each new message
                 for msg in new_messages:
+                    # Check if the message is recent (e.g., within the last 15 minutes)
+                    # This prevents spamming notifications for old events when a session changes or restarts
+                    is_recent = True
+                    timestamp_str = msg.get("timestamp")
+                    if timestamp_str:
+                        try:
+                            # Parse ISO timestamp like '2026-08-23T15:08:13+00:00'
+                            msg_time = datetime.fromisoformat(timestamp_str)
+                            if msg_time.tzinfo is None:
+                                msg_time = msg_time.replace(tzinfo=timezone.utc)
+                                
+                            now = datetime.now(timezone.utc)
+                            if now - msg_time > timedelta(minutes=15):
+                                is_recent = False
+                        except Exception as e:
+                            print(f"Could not parse timestamp {timestamp_str}: {e}")
+
                     print(f"New Race Control Event: {msg.get('category')} - {msg.get('message')}")
                     
                     # a. Broadcast to all active WebSocket clients (Live Dashboards)
                     await websocket_manager.broadcast_json({"type": "race_control", "data": msg})
                     
                     # b. Evaluate for push notifications (FCM)
-                    evaluate_and_notify_major_event(msg)
+                    if is_recent:
+                        evaluate_and_notify_major_event(msg)
+                    else:
+                        print("Skipping push notification for old event.")
                 
                 # 4. Update the seen count
                 _seen_messages_count = current_count
