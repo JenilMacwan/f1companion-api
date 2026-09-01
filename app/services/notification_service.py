@@ -80,6 +80,7 @@ def notify_breaking_news(article: Dict[str, Any]):
         
     data = {
         "url": article.get("link", ""),
+        "image_url": article.get("image_url", article.get("image", "")),
         "type": "breaking_news" # CRITICAL: Routes to the "Breaking News" UI label
     }
     
