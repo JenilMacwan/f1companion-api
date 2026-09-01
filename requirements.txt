@@ -6,3 +6,4 @@ emoji-country-flag
 feedparser
 firebase-admin
 websockets
+cloudinary

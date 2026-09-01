@@ -20,6 +20,7 @@ from app.services.live_race_monitor import start_live_monitoring
 from app.services.news_monitor import start_news_monitoring
 from app.services.standings_monitor import start_standings_monitoring
 from app.services.keep_alive_monitor import start_keep_alive
+from app.core.cloudinary_setup import initialize_cloudinary
 
 from app.core.config import (
     CORS_ORIGINS,
@@ -47,6 +48,9 @@ app = FastAPI()
 async def startup_event():
     # Initialize Firebase Admin SDK
     initialize_firebase()
+    
+    # Initialize Cloudinary
+    initialize_cloudinary()
     
     # Start background monitors
     asyncio.create_task(start_live_monitoring())
