@@ -86,14 +86,29 @@ def health_check():
     except Exception as e:
         ergast_status = f"offline ({type(e).__name__})"
         
-    overall_status = "healthy" if ergast_status == "online" else "degraded"
+    # Check if the OpenF1 API is reachable
+    from app.core.config import OPENF1_BASE_URL
+    try:
+        openf1_response = http_client.session.get(f"{OPENF1_BASE_URL}/sessions?session_key=latest", timeout=2.0)
+        openf1_response.raise_for_status()
+        openf1_status = "online"
+    except Exception as e:
+        openf1_status = f"offline ({type(e).__name__})"
+        
+    # Get active WebSocket connections
+    from app.core.websocket_manager import websocket_manager
+    active_websockets = len(websocket_manager.active_connections)
+        
+    overall_status = "healthy" if (ergast_status == "online" and openf1_status == "online") else "degraded"
     
     return {
         "status": overall_status,
         "version": APP_VERSION,
         "uptime_seconds": uptime_seconds,
+        "active_websockets": active_websockets,
         "dependencies": {
-            "jolpica_ergast_api": ergast_status
+            "jolpica_ergast_api": ergast_status,
+            "openf1_api": openf1_status
         }
     }
 

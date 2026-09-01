@@ -19,6 +19,7 @@ from app.core.firebase import initialize_firebase
 from app.services.live_race_monitor import start_live_monitoring
 from app.services.news_monitor import start_news_monitoring
 from app.services.standings_monitor import start_standings_monitoring
+from app.services.keep_alive_monitor import start_keep_alive
 
 from app.core.config import (
     CORS_ORIGINS,
@@ -51,6 +52,9 @@ async def startup_event():
     asyncio.create_task(start_live_monitoring())
     asyncio.create_task(start_news_monitoring())
     asyncio.create_task(start_standings_monitoring())
+    
+    # Start self-pinging to keep the server awake on platforms like Render
+    asyncio.create_task(start_keep_alive())
 
 # --- Middleware ---
 app.add_middleware(
