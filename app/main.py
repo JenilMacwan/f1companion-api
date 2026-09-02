@@ -20,6 +20,7 @@ from app.services.live_race_monitor import start_live_monitoring
 from app.services.news_monitor import start_news_monitoring
 from app.services.standings_monitor import start_standings_monitoring
 from app.services.keep_alive_monitor import start_keep_alive
+from app.services.team_radio_service import poll_team_radio_data
 from app.core.cloudinary_setup import initialize_cloudinary
 
 from app.core.config import (
@@ -39,6 +40,7 @@ from app.routers import (
     news_router,
     race_control_router,
     teammate_h2h_router,
+    team_radio_router,
 )
 
 # --- Create Application ---
@@ -56,6 +58,7 @@ async def startup_event():
     asyncio.create_task(start_live_monitoring())
     asyncio.create_task(start_news_monitoring())
     asyncio.create_task(start_standings_monitoring())
+    asyncio.create_task(poll_team_radio_data())
     
     # Start self-pinging to keep the server awake on platforms like Render
     asyncio.create_task(start_keep_alive())
@@ -79,6 +82,7 @@ app.include_router(standings_router.router)
 app.include_router(circuit_router.router)
 app.include_router(news_router.router)
 app.include_router(teammate_h2h_router.router)
+app.include_router(team_radio_router.router)
 
 # Exclude race_control endpoint in Vercel production environment
 import os

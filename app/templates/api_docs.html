@@ -781,6 +781,7 @@
 
             <div class="sidebar-section">Live</div>
             <a href="#get-race-control" class="sidebar-link"><span class="method-sm">GET</span> /race_control</a>
+            <a href="#get-team-radio-latest" class="sidebar-link"><span class="method-sm">GET</span> /team-radio/latest</a>
 
             <div class="sidebar-section">Content</div>
             <a href="#get-news" class="sidebar-link"><span class="method-sm">GET</span> /news</a>
@@ -1643,6 +1644,60 @@
                             <span class="note-icon">⚠️</span>
                             <span>This endpoint is excluded from Vercel production builds. It is only available when
                                 running the API locally.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GET /team-radio/latest -->
+            <div class="endpoint-section" id="get-team-radio-latest">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path-text">/team-radio/latest</span>
+                    <span class="endpoint-desc-brief">Latest team radio</span>
+                    <span class="endpoint-chevron">▼</span>
+                </div>
+                <div class="endpoint-body">
+                    <div class="endpoint-body-inner">
+                        <div class="desc">Returns the team radio communications from the latest or ongoing session.</div>
+                        <div class="params-label">Query Parameters</div>
+                        <table class="params-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Default</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>last_name</code></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td><span class="param-default">null</span></td>
+                                    <td class="param-desc">Filter by driver's last name (e.g., Verstappen)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="response-label">Example Response</div>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-lang">JSON</span>
+                                <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <pre>{
+  <span class="json-key">"session_key"</span>: <span class="json-string">"latest"</span>,
+  <span class="json-key">"last_name"</span>: <span class="json-null">null</span>,
+  <span class="json-key">"total_messages"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"messages"</span>: [
+    {
+      <span class="json-key">"timestamp"</span>: <span class="json-string">"2026-03-08T15:05:00"</span>,
+      <span class="json-key">"driver_number"</span>: <span class="json-number">1</span>,
+      <span class="json-key">"recording_url"</span>: <span class="json-string">"https://..."</span>,
+      <span class="json-key">"session_key"</span>: <span class="json-number">9158</span>
+    }
+  ]
+}</pre>
                         </div>
                     </div>
                 </div>
