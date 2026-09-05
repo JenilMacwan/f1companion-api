@@ -16,6 +16,7 @@ class HttpClient:
 
     def __init__(self, timeout=30):
         self.session = requests.Session()
+        self.session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36", "Accept": "application/json"})
         self.timeout = timeout
 
     def fetch_json(self, url, timeout=None):

@@ -76,6 +76,10 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
                 
         except Exception as e:
             print(f"Error in live race monitor loop: {e}")
+            if "429" in str(e) or "401" in str(e):
+                print("Rate limit or IP ban detected. Backing off for 1 hour...")
+                await asyncio.sleep(3600)
+                continue
             
         # 5. Dynamically adjust sleep time to save rate limits
         # If the last processed event was recent, we poll fast (e.g., 15s) for instant updates.

@@ -26,33 +26,37 @@ async def poll_team_radio_data(poll_interval_seconds: int = 15):
     
     print(f"Starting Team Radio monitor. Polling every {poll_interval_seconds} seconds...")
 
+    _last_metadata_fetch = 0
     while True:
         try:
             session_key = "latest"
             
-            # 1. Fetch Session Metadata (to get the session_name and meeting_key)
-            session_url = f"{OPENF1_BASE_URL}/sessions?session_key={session_key}"
-            session_data = await asyncio.to_thread(http_client.fetch_json, session_url)
-            
-            meeting_key = None
-            if isinstance(session_data, list) and len(session_data) > 0:
-                session_obj = session_data[0]
-                _cached_session_name = session_obj.get("session_name", "Unknown Session")
-                meeting_key = session_obj.get("meeting_key")
+            current_time = asyncio.get_event_loop().time()
+            # Fetch metadata only every 5 minutes (300 seconds) to save rate limits
+            if current_time - _last_metadata_fetch > 300 or not _cached_drivers_map:
+                _last_metadata_fetch = current_time
                 
-            # 2. Fetch Meeting Metadata (to get the event name and round number)
-            if meeting_key:
-                meeting_url = f"{OPENF1_BASE_URL}/meetings?meeting_key={meeting_key}"
-                meeting_data = await asyncio.to_thread(http_client.fetch_json, meeting_url)
+                # 1. Fetch Session Metadata (to get the session_name and meeting_key)
+                session_url = f"{OPENF1_BASE_URL}/sessions?session_key={session_key}"
+                session_data = await asyncio.to_thread(http_client.fetch_json, session_url)
                 
-                if isinstance(meeting_data, list) and len(meeting_data) > 0:
-                    meeting_obj = meeting_data[0]
-                    _cached_event_name = meeting_obj.get("meeting_name", "Unknown Event")
-                    # Look for round number (OpenF1/FastF1 APIs occasionally label this differently)
-                    _cached_round = meeting_obj.get("round_number") or meeting_obj.get("round")
+                meeting_key = None
+                if isinstance(session_data, list) and len(session_data) > 0:
+                    session_obj = session_data[0]
+                    _cached_session_name = session_obj.get("session_name", "Unknown Session")
+                    meeting_key = session_obj.get("meeting_key")
+                    
+                # 2. Fetch Meeting Metadata (to get the event name and round number)
+                if meeting_key:
+                    meeting_url = f"{OPENF1_BASE_URL}/meetings?meeting_key={meeting_key}"
+                    meeting_data = await asyncio.to_thread(http_client.fetch_json, meeting_url)
+                    
+                    if isinstance(meeting_data, list) and len(meeting_data) > 0:
+                        meeting_obj = meeting_data[0]
+                        _cached_event_name = meeting_obj.get("meeting_name", "Unknown Event")
+                        _cached_round = meeting_obj.get("round_number") or meeting_obj.get("round")
 
-            # 3. Fetch Drivers (to map last_name to driver_number)
-            if not _cached_drivers_map:
+                # 3. Fetch Drivers (to map last_name to driver_number)
                 drivers_url = f"{OPENF1_BASE_URL}/drivers?session_key={session_key}"
                 drivers_data = await asyncio.to_thread(http_client.fetch_json, drivers_url)
                 
@@ -87,6 +91,10 @@ async def poll_team_radio_data(poll_interval_seconds: int = 15):
 
         except Exception as e:
             print(f"Error in team radio monitor loop: {e}")
+            if "429" in str(e) or "401" in str(e):
+                print("Rate limit or IP ban detected. Backing off for 1 hour...")
+                await asyncio.sleep(3600)
+                continue
             
         await asyncio.sleep(poll_interval_seconds)
 
