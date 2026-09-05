@@ -58,7 +58,7 @@ async def startup_event():
     asyncio.create_task(start_live_monitoring())
     asyncio.create_task(start_news_monitoring())
     asyncio.create_task(start_standings_monitoring())
-    asyncio.create_task(poll_team_radio_data())
+    asyncio.create_task(poll_team_radio_data(300))
     
     # Start self-pinging to keep the server awake on platforms like Render
     asyncio.create_task(start_keep_alive())

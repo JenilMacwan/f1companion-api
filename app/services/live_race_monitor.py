@@ -77,5 +77,21 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
         except Exception as e:
             print(f"Error in live race monitor loop: {e}")
             
-        # 5. Wait before polling again
-        await asyncio.sleep(poll_interval_seconds)
+        # 5. Dynamically adjust sleep time to save rate limits
+        # If the last processed event was recent, we poll fast (e.g., 15s) for instant updates.
+        # If we haven't seen a recent event, we slow down (e.g., 60s) to avoid OpenF1 rate limits.
+        # We determine 'recent' by looking at the timestamp of the last message in the array.
+        current_sleep = 60
+        if current_count > 0:
+            last_msg_timestamp_str = messages[-1].get("timestamp")
+            if last_msg_timestamp_str:
+                try:
+                    last_time = datetime.fromisoformat(last_msg_timestamp_str)
+                    if last_time.tzinfo is None:
+                        last_time = last_time.replace(tzinfo=timezone.utc)
+                    if datetime.now(timezone.utc) - last_time <= timedelta(minutes=15):
+                        current_sleep = poll_interval_seconds  # fast polling
+                except:
+                    pass
+                    
+        await asyncio.sleep(current_sleep)

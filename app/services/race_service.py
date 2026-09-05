@@ -219,13 +219,20 @@ def get_sprint_results(round_num, year):
 
     clean_results = []
     for result in results_list:
+        position = int(result["position"]) if result["position"].isdigit() else 0
+        
+        if 1 <= position <= 8:
+            points = str(9 - position)
+        else:
+            points = "0"
+            
         clean_results.append({
             "position": result["position"],
             "positionText": result["positionText"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
             "driver_image": get_driver_image(result["Driver"]["driverId"]),
             "constructor": result["Constructor"]["name"],
-            "points": result.get("points", "0"),
+            "points": points,
             "grid": result.get("grid", "N/A"),
             "status": result["status"],
             "time": result.get("Time", {}).get("time", "N/A"),
@@ -278,3 +285,4 @@ def get_sprint_qualifying_results(round_num, year):
         "race_name": race["raceName"],
         "results": clean_results
     }
+
