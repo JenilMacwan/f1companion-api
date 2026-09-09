@@ -26,3 +26,7 @@ flag_test.txt
 # --- Firebase Credentials ---
 *firebase-adminsdk*.json
 test_fcm.py
+
+# --- Tests ---
+live_timing_test.py
+live_timing_test.txt
