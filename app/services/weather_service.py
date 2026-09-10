@@ -36,13 +36,14 @@ def get_track_weather(lat, lon):
     weather_url = (
         f"{OPEN_METEO_BASE_URL}/forecast"
         f"?latitude={lat}&longitude={lon}"
-        f"&current=temperature_2m,weather_code&timezone=auto"
+        f"&current=temperature_2m,surface_temperature,weather_code&timezone=auto"
     )
 
     try:
         w_res = http_client.fetch_json(weather_url)
         data = {
             "temp": f"{int(w_res['current']['temperature_2m'])}°C",
+            "track_temp": f"{int(w_res['current']['surface_temperature'])}°C",
             "condition": WMO_CODES.get(
                 w_res['current']['weather_code'], "Unknown"
             )
@@ -50,4 +51,6 @@ def get_track_weather(lat, lon):
         _weather_cache[cache_key] = (data, current_time)
         return data
     except Exception as e:
-        return {"temp": "N/A", "condition": "Unknown", "error": str(e)}
+        data = {"temp": "N/A", "track_temp": "N/A", "condition": "Unknown", "error": str(e)}
+        _weather_cache[cache_key] = (data, current_time)
+        return data
