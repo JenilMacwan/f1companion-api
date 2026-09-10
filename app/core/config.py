@@ -20,6 +20,7 @@ PRIMARY_RSS_URL = os.getenv("PRIMARY_RSS_URL")
 SECONDARY_RSS_URL = os.getenv("SECONDARY_RSS_URL")
 FALLBACK_RSS_URL = os.getenv("FALLBACK_RSS_URL")
 OPEN_METEO_BASE_URL = os.getenv("OPEN_METEO_BASE_URL")
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 STATS_BASE_URL = os.getenv("STATS_BASE_URL", "https://api.jolpi.ca/ergast/f1")
 OPENF1_BASE_URL = os.getenv("OPENF1_BASE_URL", "https://api.openf1.org/v1")
 

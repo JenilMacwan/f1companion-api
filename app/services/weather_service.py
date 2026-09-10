@@ -8,7 +8,7 @@ and mapping weather codes to human-readable conditions.
 import time
 from app.core.constants import WMO_CODES
 from app.core.http_client import http_client
-from app.core.config import OPEN_METEO_BASE_URL
+from app.core.config import OPEN_METEO_BASE_URL, WEATHER_API_KEY
 
 _weather_cache = {}
 CACHE_TTL = 30 * 60  # 30 minutes in seconds
@@ -50,7 +50,24 @@ def get_track_weather(lat, lon):
         }
         _weather_cache[cache_key] = (data, current_time)
         return data
-    except Exception as e:
-        data = {"temp": "N/A", "track_temp": "N/A", "condition": "Unknown", "error": str(e)}
+    except Exception as meteo_e:
+        # Fallback to WeatherAPI
+        if WEATHER_API_KEY:
+            try:
+                weather_api_url = f"https://api.weatherapi.com/v1/current.json?key={WEATHER_API_KEY}&q={lat},{lon}"
+                wa_res = http_client.fetch_json(weather_api_url)
+                data = {
+                    "temp": f"{int(wa_res['current']['temp_c'])}°C",
+                    "track_temp": f"{int(wa_res['current']['temp_c'])}°C",  # Using air temp as fallback
+                    "condition": wa_res['current']['condition']['text']
+                }
+                _weather_cache[cache_key] = (data, current_time)
+                return data
+            except Exception as wa_e:
+                data = {"temp": "N/A", "track_temp": "N/A", "condition": "Unknown", "error": f"OpenMeteo: {meteo_e} | WeatherAPI: {wa_e}"}
+                _weather_cache[cache_key] = (data, current_time)
+                return data
+                
+        data = {"temp": "N/A", "track_temp": "N/A", "condition": "Unknown", "error": f"OpenMeteo: {meteo_e} | WeatherAPI: Not configured"}
         _weather_cache[cache_key] = (data, current_time)
         return data
