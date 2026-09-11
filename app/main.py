@@ -62,8 +62,9 @@ async def startup_event():
     asyncio.create_task(start_standings_monitoring())
     asyncio.create_task(poll_team_radio_data(300))
     
-    # Start FastF1 live timing client in background
-    start_live_timing_client()
+    # Start FastF1 live timing client in background thread so it doesn't block the asyncio event loop
+    import threading
+    threading.Thread(target=start_live_timing_client, daemon=True).start()
     
     # Start self-pinging to keep the server awake on platforms like Render
     asyncio.create_task(start_keep_alive())
