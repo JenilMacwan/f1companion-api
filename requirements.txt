@@ -7,3 +7,4 @@ feedparser
 firebase-admin
 websockets
 cloudinary
+fastf1
