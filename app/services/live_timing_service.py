@@ -6,6 +6,13 @@ from fastf1.livetiming.client import SignalRClient
 from signalrcore.messages.completion_message import CompletionMessage
 
 logger = logging.getLogger("InMemoryLiveTiming")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 # In-memory store for the latest live timing data
 live_timing_state = {
@@ -39,10 +46,18 @@ class InMemorySignalRClient(SignalRClient):
             {"Cookie": f"AWSALBCORS={r.cookies['AWSALBCORS']}"}
         )
 
+        def custom_auth_token():
+            import os
+            token = os.getenv("F1_AUTH_TOKEN")
+            if token:
+                return token.strip()
+            from fastf1.internals.f1auth import get_auth_token
+            return get_auth_token()
+
         # Configure and create connection
         options = {
             "verify_ssl": True,
-            "access_token_factory": None if self._no_auth else get_auth_token,
+            "access_token_factory": None if self._no_auth else custom_auth_token,
             "headers": self.headers
         }
 
