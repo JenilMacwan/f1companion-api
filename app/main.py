@@ -45,11 +45,10 @@ from app.routers import (
     live_timing_router,
 )
 
-# --- Create Application ---
-app = FastAPI()
+from contextlib import asynccontextmanager
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Initialize Firebase Admin SDK
     initialize_firebase()
     
@@ -68,6 +67,11 @@ async def startup_event():
     
     # Start self-pinging to keep the server awake on platforms like Render
     asyncio.create_task(start_keep_alive())
+    
+    yield  # The app runs while yielding here
+
+# --- Create Application ---
+app = FastAPI(lifespan=lifespan)
 
 # --- Middleware ---
 app.add_middleware(

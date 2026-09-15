@@ -91,3 +91,34 @@ OFFICIAL_DRIVERS_2026 = {
     "sainz", "stroll", "max_verstappen"
 }
 
+# --- Circuit Stats (Laps & Length) ---
+# Used to augment the circuit info endpoint with official F1 data.
+CIRCUIT_STATS = {
+    "albert_park": {"laps": 58, "length": "5.278 km", "type": "Street"},
+    "shanghai": {"laps": 56, "length": "5.451 km", "type": "Permanent"},
+    "suzuka": {"laps": 53, "length": "5.807 km", "type": "Permanent"},
+    "miami": {"laps": 57, "length": "5.412 km", "type": "Street"},
+    "villeneuve": {"laps": 70, "length": "4.361 km", "type": "Street"},
+    "monaco": {"laps": 78, "length": "3.337 km", "type": "Street"},
+    "catalunya": {"laps": 66, "length": "4.657 km", "type": "Permanent"},
+    "red_bull_ring": {"laps": 71, "length": "4.318 km", "type": "Permanent"},
+    "silverstone": {"laps": 52, "length": "5.891 km", "type": "Permanent"},
+    "spa": {"laps": 44, "length": "7.004 km", "type": "Permanent"},
+    "hungaroring": {"laps": 70, "length": "4.381 km", "type": "Permanent"},
+    "zandvoort": {"laps": 72, "length": "4.259 km", "type": "Permanent"},
+    "monza": {"laps": 53, "length": "5.793 km", "type": "Permanent"},
+    "madring": {"laps": 57, "length": "5.416 km", "type": "Hybrid"},
+    "baku": {"laps": 51, "length": "6.003 km", "type": "Street"},
+    "sepang": {"laps": 56, "length": "5.543 km", "type": "Permanent"},
+    "marina_bay": {"laps": 62, "length": "4.940 km", "type": "Street"},
+    "americas": {"laps": 56, "length": "5.513 km", "type": "Permanent"},
+    "rodriguez": {"laps": 71, "length": "4.304 km", "type": "Permanent"},
+    "interlagos": {"laps": 71, "length": "4.309 km", "type": "Permanent"},
+    "vegas": {"laps": 50, "length": "6.201 km", "type": "Street"},
+    "losail": {"laps": 57, "length": "5.419 km", "type": "Permanent"},
+    "yas_marina": {"laps": 58, "length": "5.281 km", "type": "Permanent"},
+    "bahrain": {"laps": 57, "length": "5.412 km", "type": "Permanent"},
+    "imola": {"laps": 63, "length": "4.909 km", "type": "Permanent"},
+    "jeddah": {"laps": 50, "length": "6.174 km", "type": "Street"}
+}
+

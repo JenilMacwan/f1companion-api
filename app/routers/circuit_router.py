@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 import requests
 
 from app.core.config import SCHEDULE_URL
+from app.core.constants import CIRCUIT_STATS
 from app.core.http_client import http_client
 from app.utils.helpers import get_track_layout
 
@@ -25,12 +26,18 @@ def circuits():
             country_name = race["Circuit"]["Location"]["country"]
             country_locality = race["Circuit"]["Location"]["locality"]
             layout_url = get_track_layout(country_locality)
+            circuit_id = race["Circuit"]["circuitId"]
+            stats = CIRCUIT_STATS.get(circuit_id, {"laps": "N/A", "length": "N/A"})
+
             circuit_entry = {
-                "circuitid": race["Circuit"]["circuitId"],
+                "circuitid": circuit_id,
                 "circuitname": race["Circuit"]["circuitName"],
                 "circuitlocation": country_locality,
                 "circuitcountry": country_name,
-                "circuitlayout": layout_url
+                "circuitlayout": layout_url,
+                "laps": stats.get("laps", "N/A"),
+                "length": stats.get("length", "N/A"),
+                "type": stats.get("type", "N/A")
             }
             clean_circuits.append(circuit_entry)
 
