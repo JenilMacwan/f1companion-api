@@ -11,6 +11,7 @@ from app.core.constants import OFFICIAL_DRIVERS_2026
 from app.core.http_client import http_client
 from app.data.championships import GLOBAL_WDC_MAP
 from app.data.driver_stats import DRIVER_BASE_STATS
+from app.data.driver_info import DRIVER_INFO
 from app.services.schedule_service import get_schedule
 from app.services.round_results_service import get_round_results
 from app.utils.helpers import stats, get_driver_image
@@ -256,16 +257,21 @@ def get_driver_profiles():
                 "cumulative_points": round(cumulative_points, 1)
             })
 
+        info = DRIVER_INFO.get(d_id, {})
+
         profiles.append({
             "driver_id": d_id,
             "first_name": first_name,
             "last_name": last_name,
             "full_name": f"{first_name} {last_name}",
-            "number": number,
+            "number": info.get("number", number),
             "code": code,
-            "nationality": nationality,
+            "nationality": info.get("country", nationality),
             "image": image_url,
             "team": team,
+            "born": info.get("born", ""),
+            "debut": info.get("debut", ""),
+            "about": info.get("about", ""),
             "career_stats": {
                 "world_championships": wdc_count,
                 "total_races": total_races,
