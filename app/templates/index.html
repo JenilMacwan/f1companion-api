@@ -817,10 +817,6 @@
                     <div class="endpoint-path"><span class="method-badge">GET</span> /constructor_profile</div>
                     <div class="endpoint-desc">Enriched profiles with logo, car images, drivers, and career stats</div>
                 </a>
-                <a href="/constructor_stats" class="endpoint-card">
-                    <div class="endpoint-path"><span class="method-badge">GET</span> /constructor_stats</div>
-                    <div class="endpoint-desc">All-time win/podium rates and championship history</div>
-                </a>
             </div>
 
             <!-- ═══════════ STANDINGS ═══════════ -->
@@ -928,6 +924,17 @@
                 <div class="section-line"></div>
             </div>
             <div class="endpoints-grid reveal">
+                <a href="/api-docs#get-live-timing" class="endpoint-card">
+                    <div class="endpoint-path"><span class="method-badge">GET</span> /live-timing</div>
+                    <div class="endpoint-desc">Live timing state for all drivers on track including lap times and
+                        telemetry</div>
+                    <div class="endpoint-info">🔴 LIVE DATA ⚠️ Under development</div>
+                </a>
+                <a href="/api-docs#get-live-timing-driver" class="endpoint-card">
+                    <div class="endpoint-path"><span class="method-badge">GET</span> /live-timing/{id}</div>
+                    <div class="endpoint-desc">Live timing for a specific driver (e.g. 1 for Verstappen)</div>
+                    <div class="endpoint-info">🔴 LIVE DATA ⚠️ Under development</div>
+                </a>
                 <a href="/race_control" class="endpoint-card">
                     <div class="endpoint-path"><span class="method-badge">GET</span> /race_control</div>
                     <div class="endpoint-desc">Live and historical race control messages — flags, safety cars,

@@ -231,6 +231,7 @@ def get_driver_profiles():
             "points": standing_info.get("points", "0"),
             "wins": cy["wins"],
             "podiums": cy["podiums"],
+            "poles": cy["pole"],
             "points_progression": []
         }
 
