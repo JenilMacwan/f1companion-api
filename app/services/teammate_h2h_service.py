@@ -13,6 +13,7 @@ from app.core.constants import OFFICIAL_DRIVERS_2026
 from app.services.schedule_service import get_schedule
 from app.services.round_results_service import get_round_results
 from app.utils.helpers import stats, get_driver_image, get_constructor_logo
+from app.data.driver_info import DRIVER_INFO
 
 
 def _build_driver_constructor_map():
@@ -51,6 +52,7 @@ def _build_driver_constructor_map():
                     "name": f"{driver.get('givenName', '')} {driver.get('familyName', '')}",
                     "code": driver.get("code", "---") or "---",
                     "image": get_driver_image(d_id),
+                    "headshot_url": DRIVER_INFO.get(d_id, {}).get("headshot_url", ""),
                 }
 
                 for c in standing.get("Constructors", []):

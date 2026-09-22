@@ -13,6 +13,7 @@ from app.services.weather_service import get_track_weather
 from app.utils.flags import get_clean_flag
 from app.utils.datetime_utils import parse_race_datetime
 from app.utils.helpers import get_driver_image
+from app.data.driver_info import DRIVER_INFO
 
 
 def get_next_race():
@@ -143,6 +144,7 @@ def get_race_results(round_num, year):
             "positionText": result["positionText"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
             "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "headshot_url": DRIVER_INFO.get(result["Driver"]["driverId"], {}).get("headshot_url", ""),
             "constructor": result["Constructor"]["name"],
             "points": result["points"],
             "grid": result["grid"],
@@ -184,6 +186,7 @@ def get_qualifying_results(round_num, year):
             "position": result["position"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
             "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "headshot_url": DRIVER_INFO.get(result["Driver"]["driverId"], {}).get("headshot_url", ""),
             "constructor": result["Constructor"]["name"],
             "q1": result.get("Q1", "N/A"),
             "q2": result.get("Q2", "N/A"),
@@ -231,6 +234,7 @@ def get_sprint_results(round_num, year):
             "positionText": result["positionText"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
             "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "headshot_url": DRIVER_INFO.get(result["Driver"]["driverId"], {}).get("headshot_url", ""),
             "constructor": result["Constructor"]["name"],
             "points": points,
             "grid": result.get("grid", "N/A"),
@@ -276,6 +280,7 @@ def get_sprint_qualifying_results(round_num, year):
             "position": result["grid"],
             "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
             "driver_image": get_driver_image(result["Driver"]["driverId"]),
+            "headshot_url": DRIVER_INFO.get(result["Driver"]["driverId"], {}).get("headshot_url", ""),
             "constructor": result["Constructor"]["name"]
         })
 

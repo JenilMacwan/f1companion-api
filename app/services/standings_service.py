@@ -7,6 +7,7 @@ Responsible for fetching and processing driver and constructor championship stan
 from app.core.config import DRIVER_STANDINGS_URL, CONSTRUCTOR_STANDINGS_URL
 from app.core.http_client import http_client
 from app.utils.helpers import get_driver_image, get_constructor_logo
+from app.data.driver_info import DRIVER_INFO
 
 
 def get_driver_standings():
@@ -43,6 +44,7 @@ def get_driver_standings():
             "driverid": driver_data.get("driverId"),
             "name": f"{driver_data.get('givenName')} {driver_data.get('familyName')}",
             "driver_image": get_driver_image(driver_data.get("driverId")) if driver_data.get("driverId") else None,
+            "headshot_url": DRIVER_INFO.get(driver_data.get("driverId"), {}).get("headshot_url", ""),
             "team_name": constructor_name,
             "nationality": driver_data.get("nationality", "N/A"),
             "url": driver_data.get("url", "No URL")
