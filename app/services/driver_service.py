@@ -268,6 +268,7 @@ def get_driver_profiles():
             "code": code,
             "nationality": info.get("country", nationality),
             "image": image_url,
+            "headshot_url": info.get("headshot_url", ""),
             "team": team,
             "born": info.get("born", ""),
             "debut": info.get("debut", ""),
