@@ -14,6 +14,21 @@ from app.services.round_results_service import get_round_results
 from app.utils.helpers import stats, get_constructor_logo
 from app.utils.helpers import get_constructor_car
 
+FULL_NAME_MAP = {
+    "ferrari": "Scuderia Ferrari HP",
+    "red_bull": "Oracle Red Bull Racing",
+    "mercedes": "Mercedes-AMG Petronas F1 Team",
+    "mclaren": "McLaren Mastercard F1 Team",
+    "aston_martin": "Aston Martin Aramco F1 Team",
+    "alpine": "BWT Alpine F1 Team",
+    "williams": "Atlassian Williams F1 Team",
+    "rb": "Visa Cash App Racing Bulls F1 Team",
+    "audi": "Audi Revolut F1 Team",
+    "sauber": "Audi Revolut F1 Team",
+    "haas": "TGR Haas F1 Team",
+    "cadillac": "Cadillac F1 Team"
+}
+
 
 def get_constructors():
 
@@ -25,6 +40,7 @@ def get_constructors():
         constructor_entry = {
             "constructorid": constructor["constructorId"],
             "name": constructor["name"],
+            "full_name": FULL_NAME_MAP.get(constructor["constructorId"], constructor["name"]),
             "nationality": constructor["nationality"],
             "url": constructor["url"]
         }
@@ -232,6 +248,7 @@ def get_constructor_profiles():
         profiles.append({
             "constructor_id": c_id,
             "name": name,
+            "full_name": FULL_NAME_MAP.get(c_id, name),
             "nationality": nationality,
             "logo": logo_url,
             "car": car_image_url,
