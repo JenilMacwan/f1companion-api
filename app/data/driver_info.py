@@ -6,7 +6,7 @@ DRIVER_INFO = {
     "norris": {
         "team": "McLaren Mastercard F1 Team",
         "country": "Great Britain",
-        "number": "4",
+        "number": "1",
         "born": "Bristol, GBR",
         "debut": "2019 Melbourne",
         "about": "The 2025 World Champion and McLaren's franchise anchor. Blending blistering qualifying speed with razor-sharp tire management, Norris joined McLaren in 2019 and spearheaded the team's return to the top step of the podium.",
@@ -60,7 +60,7 @@ DRIVER_INFO = {
     "max_verstappen": {
         "team": "Oracle Red Bull Racing",
         "country": "Netherlands",
-        "number": "1",
+        "number": "3",
         "born": "Hasselt, BEL",
         "debut": "2015 Melbourne",
         "about": "A multiple World Champion and an uncompromising racing machine. Defined by fierce aggression, unmatched consistency, and surgical race execution, Verstappen is the benchmark of modern grand prix driving.",
