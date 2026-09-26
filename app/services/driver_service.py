@@ -30,6 +30,16 @@ def get_drivers():
     data = http_client.fetch_json(DRIVERS_URL)
     drivers_raw = data["MRData"]["DriverTable"]["Drivers"]
 
+    fetched_ids = {d.get("driverId") for d in drivers_raw}
+    missing_ids = OFFICIAL_DRIVERS_2026 - fetched_ids
+    for d_id in missing_ids:
+        try:
+            res = http_client.fetch_json(stats(f"drivers/{d_id}.json"))
+            if res.get("MRData", {}).get("DriverTable", {}).get("Drivers"):
+                drivers_raw.append(res["MRData"]["DriverTable"]["Drivers"][0])
+        except Exception:
+            pass
+
     clean_drivers = []
     for driver in drivers_raw:
         if driver.get("driverId") not in OFFICIAL_DRIVERS_2026:
@@ -120,6 +130,16 @@ def get_driver_profiles():
     # --- Fetch current drivers list ---
     current_res = http_client.fetch_json(stats("current/drivers.json"))
     current_drivers = current_res["MRData"]["DriverTable"]["Drivers"]
+
+    fetched_ids = {d.get("driverId") for d in current_drivers}
+    missing_ids = OFFICIAL_DRIVERS_2026 - fetched_ids
+    for d_id in missing_ids:
+        try:
+            res = http_client.fetch_json(stats(f"drivers/{d_id}.json"))
+            if res.get("MRData", {}).get("DriverTable", {}).get("Drivers"):
+                current_drivers.append(res["MRData"]["DriverTable"]["Drivers"][0])
+        except Exception:
+            pass
 
     # --- Fetch current standings (for team + position + points) ---
     current_standings_map = {}
