@@ -14,6 +14,7 @@ router = APIRouter()
 FAVICON_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "favicon" / "f1_companion_icon.png"
 INDEX_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "index.html"
 API_DOCS_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "api_docs.html"
+LIVE_TIMING_HTML_PATH = Path(__file__).resolve().parent.parent / "templates" / "live_timing.html"
 
 
 import os
@@ -33,6 +34,12 @@ def read_root():
 @router.get("/api-docs", response_class=HTMLResponse)
 def api_docs():
     with open(API_DOCS_HTML_PATH, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
+@router.get("/live-timing-ui", response_class=HTMLResponse)
+def live_timing_ui():
+    with open(LIVE_TIMING_HTML_PATH, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 

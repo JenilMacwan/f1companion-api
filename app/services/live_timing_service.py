@@ -97,17 +97,30 @@ class InMemorySignalRClient(SignalRClient):
             if len(msg) >= 2:
                 category = msg[0]
                 try:
-                    data = json.loads(msg[1])
+                    # signalrcore sometimes automatically parses the JSON into a dict, so we handle both cases
+                    data = msg[1] if isinstance(msg[1], dict) else json.loads(msg[1])
                     self._update_state(category, data)
                 except Exception as e:
-                    pass
+                    # Log the exact error and a snippet of the payload to diagnose decompression or formatting issues
+                    logger.error(f"Error parsing {category}: {e}. Raw data snippet: {str(msg[1])[:100]}")
 
     def _update_state(self, category, data):
+        def deep_update(target, source):
+            for k, v in source.items():
+                if isinstance(v, dict) and k in target and isinstance(target[k], dict):
+                    deep_update(target[k], v)
+                else:
+                    target[k] = v
+
         with state_lock:
             # For RaceControlMessages we might want to append, but for timing data we replace or deep update
             if category == "RaceControlMessages":
                 if "Messages" in data:
-                    live_timing_state["RaceControlMessages"].extend(data["Messages"])
+                    msgs = data["Messages"]
+                    if isinstance(msgs, dict):
+                        live_timing_state["RaceControlMessages"].extend(msgs.values())
+                    else:
+                        live_timing_state["RaceControlMessages"].extend(msgs)
             else:
                 # For dictionaries like TimingData, we can do a simple replace or dict update
                 # Since we are returning raw data right now, a simple overwrite or update is okay.
@@ -123,20 +136,81 @@ class InMemorySignalRClient(SignalRClient):
                         for driver_num, driver_data in data["Lines"].items():
                             if driver_num not in live_timing_state[category]["Lines"]:
                                 live_timing_state[category]["Lines"][driver_num] = {}
-                            live_timing_state[category]["Lines"][driver_num].update(driver_data)
+                            deep_update(live_timing_state[category]["Lines"][driver_num], driver_data)
+                        
+                        # Process any other top-level keys (like SessionPart)
+                        for k, v in data.items():
+                            if k != "Lines":
+                                if isinstance(v, dict) and k in live_timing_state[category] and isinstance(live_timing_state[category][k], dict):
+                                    deep_update(live_timing_state[category][k], v)
+                                else:
+                                    live_timing_state[category][k] = v
                     else:
-                        live_timing_state[category].update(data)
+                        deep_update(live_timing_state[category], data)
 
+
+def clear_live_timing_state():
+    with state_lock:
+        live_timing_state.clear()
+        live_timing_state.update({
+            "TimingData": {},
+            "TimingStats": {},
+            "TimingAppData": {},
+            "DriverList": {},
+            "TrackStatus": {},
+            "WeatherData": {},
+            "SessionInfo": {},
+            "RaceControlMessages": []
+        })
 
 # Global instance
 _client = None
 
 def start_live_timing_client():
-    global _client
-    if _client is None:
-        logger.info("Starting in-memory FastF1 Live Timing Client...")
-        _client = InMemorySignalRClient(timeout=0)
-        # Connect and subscribe
-        _client._run()
-        # Since we run inside FastAPI, we don't call _client._supervise() to block, 
-        # the signalrcore background threads will handle the connection.
+    def supervisor():
+        global _client
+        
+        # We track the last time we successfully received a message across reconnects
+        global_last_msg_time = time.time()
+        
+        while True:
+            try:
+                # Update our global message time if the client is active
+                if _client is not None:
+                    client_last_msg = getattr(_client, '_t_last_message', None)
+                    if client_last_msg:
+                        global_last_msg_time = client_last_msg
+
+                current_time = time.time()
+
+                # Clear data if it has been more than 1 hour (3600 seconds) since the last message
+                if current_time - global_last_msg_time > 3600:
+                    logger.warning("No messages for over 1 hour. Session assumed over, clearing old data...")
+                    clear_live_timing_state()
+                    # Reset the global timer so we don't spam clear
+                    global_last_msg_time = current_time
+
+                # Handle connection health
+                if _client is None:
+                    logger.info("Starting in-memory FastF1 Live Timing Client...")
+                    # We NO LONGER clear state here. State is only cleared by the 1-hour timeout above.
+                    _client = InMemorySignalRClient(timeout=0)
+                    _client._run()
+                else:
+                    # Restart connection if explicitly disconnected
+                    if not getattr(_client, '_is_connected', False):
+                        logger.warning("Live timing connection closed. Restarting...")
+                        try:
+                            _client._exit()
+                        except Exception:
+                            pass
+                        _client = None
+                        
+            except Exception as e:
+                logger.error(f"Error in live timing supervisor: {e}")
+                
+            time.sleep(10)
+            
+    import threading
+    supervisor_thread = threading.Thread(target=supervisor, daemon=True)
+    supervisor_thread.start()

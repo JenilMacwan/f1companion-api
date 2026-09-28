@@ -12,9 +12,9 @@ from app.services.notification_service import evaluate_and_notify_major_event
 # so we only broadcast and notify for truly new ones.
 _seen_messages_count = None
 
-async def start_live_monitoring(poll_interval_seconds: int = 15):
+async def start_live_monitoring(poll_interval_seconds: int = 2):
     """
-    Background loop that continuously polls OpenF1 for new race control
+    Background loop that continuously polls the in-memory race control
     messages for the "latest" session.
     """
     global _seen_messages_count
@@ -49,13 +49,17 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
                     timestamp_str = msg.get("timestamp")
                     if timestamp_str:
                         try:
+                            # Replace 'Z' with '+00:00' because datetime.fromisoformat in older python versions doesn't support 'Z'
+                            parsed_str = timestamp_str.replace('Z', '+00:00')
                             # Parse ISO timestamp like '2026-08-23T15:08:13+00:00'
-                            msg_time = datetime.fromisoformat(timestamp_str)
+                            msg_time = datetime.fromisoformat(parsed_str)
                             if msg_time.tzinfo is None:
                                 msg_time = msg_time.replace(tzinfo=timezone.utc)
                                 
                             now = datetime.now(timezone.utc)
-                            if now - msg_time > timedelta(minutes=15):
+                            # Reduce window to 2 minutes to ensure we don't send notifications 
+                            # if F1 starts streaming a replay of a recently ended session.
+                            if now - msg_time > timedelta(minutes=2):
                                 is_recent = False
                         except Exception as e:
                             print(f"Could not parse timestamp {timestamp_str}: {e}")
@@ -81,21 +85,5 @@ async def start_live_monitoring(poll_interval_seconds: int = 15):
                 await asyncio.sleep(3600)
                 continue
             
-        # 5. Dynamically adjust sleep time to save rate limits
-        # If the last processed event was recent, we poll fast (e.g., 15s) for instant updates.
-        # If we haven't seen a recent event, we slow down (e.g., 60s) to avoid OpenF1 rate limits.
-        # We determine 'recent' by looking at the timestamp of the last message in the array.
-        current_sleep = 60
-        if current_count > 0:
-            last_msg_timestamp_str = messages[-1].get("timestamp")
-            if last_msg_timestamp_str:
-                try:
-                    last_time = datetime.fromisoformat(last_msg_timestamp_str)
-                    if last_time.tzinfo is None:
-                        last_time = last_time.replace(tzinfo=timezone.utc)
-                    if datetime.now(timezone.utc) - last_time <= timedelta(minutes=15):
-                        current_sleep = poll_interval_seconds  # fast polling
-                except:
-                    pass
-                    
-        await asyncio.sleep(current_sleep)
+        # 5. Sleep for the poll interval. We are reading from memory, so no API limits.
+        await asyncio.sleep(poll_interval_seconds)

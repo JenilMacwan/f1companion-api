@@ -100,3 +100,216 @@ def notify_standings_update(top_driver: Dict[str, Any]):
     
     # CRITICAL: Include the data dict with the standings type
     send_topic_notification(topic, title, body, data={"type": "standings"})
+
+import re
+
+def _clean_team_name(team: str) -> str:
+    """Removes sponsors and standardizes team names."""
+    lower = team.lower()
+    if "mclaren" in lower: return "McLaren"
+    if "red bull" in lower: return "Red Bull Racing"
+    if "mercedes" in lower: return "Mercedes"
+    if "ferrari" in lower: return "Ferrari"
+    if "aston martin" in lower: return "Aston Martin"
+    if "alpine" in lower: return "Alpine"
+    if "williams" in lower: return "Williams"
+    if "haas" in lower: return "Haas"
+    if "audi" in lower: return "Audi"
+    if "cadillac" in lower: return "Cadillac"
+    if "rb" in lower or "racing bulls" in lower: return "RB"
+    return team
+
+def _clean_driver_name(driver: str) -> str:
+    """Removes driver numbers and trailing spaces."""
+    return re.sub(r'\s+#?\d+$', '', driver).strip()
+
+def _sanitize_topic(input_str: str) -> str:
+    """Sanitizes strings for FCM topics exactly like the Android app."""
+    s = input_str.strip().lower()
+    s = re.sub(r'[^a-z0-9-_.~%]', '_', s)
+    s = re.sub(r'_+', '_', s)
+    return s.strip('_')
+
+def _get_driver_topic(driver_name: str) -> str:
+    """Generates a valid FCM topic string for a specific driver."""
+    clean_name = _clean_driver_name(driver_name)
+    return _sanitize_topic(f"favorite_driver_{clean_name}")
+
+def notify_favorite_driver_championship_position_change(driver_name: str, new_position: int):
+    """
+    Sends a push notification when a favorite driver's position changes.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} Update"
+    body = f"{driver_name} is now in {new_position}th position in the Championship standings."
+    data = {
+        "type": "favorite_driver_championship_position_change",
+        "driver_name": driver_name,
+        "new_position": str(new_position),
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_fastest_lap(driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite driver sets the fastest lap.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} Fastest Lap! ⏱️"
+    body = f"{driver_name} has set the fastest lap in the {session_name} at {race_name}."
+    data = {
+        "type": "favorite_driver_fastest_lap",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_podium(driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite driver reaches the podium.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} on the Podium! 🏆"
+    body = f"{driver_name} has finished in the top 3 at the {session_name} in {race_name}!"
+    data = {
+        "type": "favorite_driver_podium",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_retirement(driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite driver retires from the race.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} Retired ❌"
+    body = f"{driver_name} has retired from the {session_name} at {race_name}."
+    data = {
+        "type": "favorite_driver_retirement",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_finish(driver_name: str, race_name: str, session_name: str, final_position: int):
+    """
+    Sends a push notification when a favorite driver finishes the race.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} Finished! 🏁"
+    body = f"{driver_name} has finished the {session_name} at {race_name} in {final_position}th position."
+    data = {
+        "type": "favorite_driver_finish",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name,
+        "final_position": str(final_position)
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_pole_position(driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite driver takes pole position.
+    """
+    topic = _get_driver_topic(driver_name)
+    title = f"{driver_name} on Pole! 🏎️💨"
+    body = f"{driver_name} has secured pole position for the {session_name} at {race_name}!"
+    data = {
+        "type": "favorite_driver_pole_position",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_driver_qualifying_position(driver_name: str, race_name: str, position: int):
+    """
+    Sends a push notification showing the final qualifying position for a favorite driver.
+    """
+    topic = _get_driver_topic(driver_name)
+    
+    # Optional: Customize message if they got Pole
+    if position == 1:
+        title = f"{driver_name} takes Pole! 🏎️💨"
+        body = f"{driver_name} has secured pole position for the {race_name}!"
+    else:
+        title = f"{driver_name} Qualifying Result ⏱️"
+        body = f"{driver_name} has qualified P{position} for the {race_name}."
+        
+    data = {
+        "type": "favorite_driver_qualifying",
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "position": str(position)
+    }
+    send_topic_notification(topic, title, body, data)
+
+def _get_team_topic(team_name: str) -> str:
+    """Generates a valid FCM topic string for a specific team."""
+    clean_team = _clean_team_name(team_name)
+    return _sanitize_topic(f"favorite_team_{clean_team}")
+
+def notify_favorite_team_championship_position_change(team_name: str, new_position: int):
+    """
+    Sends a push notification when a favorite team's position changes.
+    """
+    topic = _get_team_topic(team_name)
+    title = f"{team_name} Update"
+    body = f"{team_name} is now in {new_position}th position in the Constructors' Championship."
+    data = {
+        "type": "favorite_team_championship_position_change",
+        "team_name": team_name,
+        "new_position": str(new_position),
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_team_podium(team_name: str, driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite team's driver reaches the podium.
+    """
+    topic = _get_team_topic(team_name)
+    title = f"{team_name} Podium! 🏆"
+    body = f"{driver_name} has secured a podium for {team_name} at the {session_name} in {race_name}!"
+    data = {
+        "type": "favorite_team_podium",
+        "team_name": team_name,
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_team_win(team_name: str, driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite team wins the race.
+    """
+    topic = _get_team_topic(team_name)
+    title = f"{team_name} Wins! 🥇"
+    body = f"{driver_name} has won the {session_name} at {race_name} for {team_name}!"
+    data = {
+        "type": "favorite_team_win",
+        "team_name": team_name,
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
+
+def notify_favorite_team_pole_position(team_name: str, driver_name: str, race_name: str, session_name: str):
+    """
+    Sends a push notification when a favorite team's driver takes pole position.
+    """
+    topic = _get_team_topic(team_name)
+    title = f"{team_name} on Pole! 🏎️💨"
+    body = f"{driver_name} has secured pole position for {team_name} at the {session_name} in {race_name}!"
+    data = {
+        "type": "favorite_team_pole_position",
+        "team_name": team_name,
+        "driver_name": driver_name,
+        "race_name": race_name,
+        "session_name": session_name
+    }
+    send_topic_notification(topic, title, body, data)
