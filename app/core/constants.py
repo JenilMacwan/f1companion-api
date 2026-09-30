@@ -45,7 +45,8 @@ TRACK_LAYOUT = {
     "Miami": "track/maimi-usa.webp",
     "Zandvoort": "track/zandvoort-netherlands.webp",
     "Marina Bay": "track/marinabay-singapore.webp",
-    "Jeddah": "track/jeddah-saudi.webp"
+    "Jeddah": "track/jeddah-saudi.webp",
+    "Kuala Lumpur": "track/kuala-lumpur-malaysia.webp"
 }
 
 # --- Session Durations (in minutes) ---
