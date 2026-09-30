@@ -30,6 +30,7 @@ from app.core.config import (
     CORS_ALLOW_METHODS,
     CORS_ALLOW_HEADERS,
 )
+
 from app.routers import (
     system_router,
     schedule_router,
