@@ -82,7 +82,7 @@ class InMemorySignalRClient(SignalRClient):
         
     def _run(self):
         # Override _run to not open a file
-        from fastf1.internals.f1auth import get_auth_token
+        import os
         import requests
         from signalrcore.hub_connection_builder import HubConnectionBuilder
         
@@ -97,20 +97,24 @@ class InMemorySignalRClient(SignalRClient):
             {"Cookie": f"AWSALBCORS={cookie}"}
         )
 
-        def custom_auth_token():
-            import os
-            token = os.getenv("F1_AUTH_TOKEN")
-            if token:
-                return token.strip()
+        configured_token = os.getenv("F1_AUTH_TOKEN")
+        if configured_token:
+            access_token_factory = lambda: configured_token.strip()
+        elif hasattr(self, "_access_token_factory"):
+            # FastF1 3.9+ moved account auth into SignalRClient's helper.
+            access_token_factory = self._access_token_factory()
+        else:
+            # Compatibility with older FastF1 releases still used locally.
             from fastf1.internals.f1auth import get_auth_token
-            return get_auth_token()
+            access_token_factory = get_auth_token
 
         # Configure and create connection
         options = {
             "verify_ssl": True,
-            "access_token_factory": None if self._no_auth else custom_auth_token,
             "headers": self.headers
         }
+        if not self._no_auth and access_token_factory is not None:
+            options["access_token_factory"] = access_token_factory
 
         self._connection = HubConnectionBuilder() \
             .with_url(self._connection_url, options=options) \
