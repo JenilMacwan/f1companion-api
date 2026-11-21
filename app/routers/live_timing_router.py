@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
-from app.services.live_timing_service import live_timing_state, state_lock
+from app.services.live_timing_service import (
+    get_live_feed_status,
+    live_timing_state,
+    state_lock,
+)
 import threading
 import time
 import random
@@ -97,6 +101,12 @@ def get_all_live_timing():
     """
     with state_lock:
         return live_timing_state
+
+
+@router.get("/status")
+def get_live_timing_status():
+    """Expose feed connection and freshness diagnostics for the live timing UI."""
+    return get_live_feed_status()
 
 @router.get("/test-mode")
 def enable_test_mode():
